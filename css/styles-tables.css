@@ -1,0 +1,399 @@
+/* A second sort key inside a header (Crafting Planner Sell → "vol"). */
+.th-sub-sort {
+  font-size: 0.75em;
+  font-weight: normal;
+  color: #9ca3af;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+.th-sub-sort:hover {
+  color: #e5e7eb;
+}
+
+.th-sub-sort.sort-asc,
+.th-sub-sort.sort-desc {
+  color: #f3f4f6;
+}
+
+.th-sub-sort.sort-asc::after {
+  content: " \2191";
+}
+
+.th-sub-sort.sort-desc::after {
+  content: " \2193";
+}
+
+.profit-high {
+  color: #6baa88;
+  font-weight: bold;
+}
+
+.profit-medium {
+  color: #a8924e;
+}
+
+.profit-low {
+  color: #7a8494;
+}
+
+.profit-negative {
+  color: #b07070;
+}
+
+.silver-val {
+  font-family: monospace;
+}
+
+/* Hidden search aliases (real mat name + family synonyms) live inside a name
+   cell so the table search can match them; never visually rendered. */
+.search-alias {
+  display: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#loading-overlay {
+  display: inline-block;
+  margin-left: 1rem;
+  font-style: italic;
+  color: #9ca3af;
+}
+
+.vol-cell {
+  font-family: monospace;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.section-divider td {
+  background: #1e3a5f;
+  color: #93c5fd;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  text-align: center;
+  border-top: 2px solid #2563eb;
+  border-bottom: 1px solid #374151;
+  letter-spacing: 0.05em;
+}
+
+/* ── Sell-city picker for profit cells ───────────────────────────────────── */
+.profit-cell-clickable {
+  cursor: pointer;
+  white-space: nowrap;
+}
+.profit-cell-clickable::after {
+  content: " ▾";
+  font-size: 0.65rem;
+  opacity: 0.45;
+  vertical-align: middle;
+}
+.profit-cell-clickable:hover {
+  text-decoration: underline dotted;
+  opacity: 0.85;
+}
+
+#sell-city-picker {
+  position: fixed;
+  z-index: 9999;
+  background: #1f2937;
+  border: 1px solid #3e5e82;
+  border-radius: 6px;
+  padding: 6px 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+  min-width: 152px;
+  display: none;
+}
+#sell-city-picker .city-picker-item {
+  padding: 5px 14px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+#sell-city-picker .city-picker-item:hover {
+  background: #374151;
+}
+#sell-city-picker .city-picker-current {
+  color: #6baa88;
+  font-weight: 600;
+}
+#sell-city-picker .city-picker-current::before {
+  content: "✓ ";
+  font-size: 0.75rem;
+}
+#sell-city-picker .city-picker-disabled {
+  color: #4b5563;
+  cursor: not-allowed;
+  font-style: italic;
+}
+
+#sell-city-no-data-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3e2020;
+  border: 1px solid #9e5858;
+  color: #f87171;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+#sell-city-no-data-toast.visible {
+  opacity: 1;
+}
+
+/* One centered spinner for a running re-render (js/recalc-cell-mark.js).
+   Created lazily by JS; visible = .is-visible. It never takes a click:
+   pointer-events none, so the app stays scrollable and editable under it. */
+#recalc-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.92);
+  border: 1px solid #374151;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+#recalc-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0s;
+}
+#recalc-overlay .recalc-overlay-spinner {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #4b5563;
+  border-top-color: #93c5fd;
+  animation: app-loader-spin 0.9s linear infinite;
+}
+/* A cell whose editor has closed but whose new number has not been drawn yet
+   (js/pending-edit-mark.js). The dim says "this number is stale"; the ring says
+   "and something is working on it" — the pill reports the same thing, but from
+   the opposite corner of the screen to where the user is looking.
+
+   This one
+   used to widen its cell (padding-right: 1.2rem) on the theory that one cell
+   could afford it — which in a `width: max-content` table it cannot, since the
+   widest cell in a column IS the column. It never actually fired there:
+   `.data-table td` (0,1,1) outranks `.pe-pending` (0,1,0), so the padding only
+   ever reached marks outside a data table. Dropped rather than made specific:
+   the ring fits in the cell's existing padding, and a mark that costs no layout
+   cannot move anything. */
+.pe-pending {
+  /* Was 0.55. `opacity` applies to the whole element INCLUDING the ::after
+     below, so the deeper the dim the fainter the spinner — and the spinner is
+     the half that says work is happening. 0.7 still reads as stale. */
+  opacity: 0.7;
+  position: relative;
+}
+.pe-pending::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  border: 2px solid #4b5563;
+  border-top-color: #bfdbfe;
+  animation: app-loader-spin 0.9s linear infinite;
+  pointer-events: none;
+}
+/* Compact leaves only 0.22rem of side padding (~3.5px), which is narrower than
+   either ring — at full size the spinner would sit on top of the digits. */
+body.compact .pe-pending::after {
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-width: 1px;
+}
+/* The whole row, so the mark is findable without hunting for the one cell.
+   Never opacity: the old numbers stay readable while the new ones compute. */
+.pe-pending-row > td {
+  background: rgba(147, 197, 253, 0.07);
+}
+.pe-pending-row > td:first-child {
+  box-shadow: inset 2px 0 0 #93c5fd;
+}
+/* "Fetching 40 items…" beside a table's own search box, for the Enter-fetch
+   (js/table-search-fetch.js). The global #loading-overlay reports the same
+   thing from the page header, which is off screen whenever a table is what the
+   user is reading. Ring geometry matches the other pending marks so the two
+   halves of one fetch — the box and the cells — look like one report. */
+.search-fetch-status {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+/* No text, no chrome: the span is created once and lives in the picker row. */
+.search-fetch-status:empty {
+  display: none;
+}
+.search-fetch-status::after {
+  content: "";
+  display: inline-block;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 2px solid #6b7280;
+  border-top-color: #dbeafe;
+  animation: app-loader-spin 0.9s linear infinite;
+  vertical-align: -1px;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #recalc-overlay .recalc-overlay-spinner,
+  .pe-pending::after,
+  .search-fetch-status::after,
+  .row-computing::after {
+    animation: none;
+  }
+}
+
+/* City Bonuses reference table — chips wrap inside each cell so the
+   craft-spec column (Caerleon has ~30 entries) doesn't push the table wider
+   than its scroll wrapper. */
+#city-bonuses-table th,
+#city-bonuses-table td,
+#black-zone-bonuses-table th,
+#black-zone-bonuses-table td,
+#black-zone-locations-table th,
+#black-zone-locations-table td {
+  vertical-align: top;
+  white-space: normal;
+}
+#city-bonuses-table td.cb-city,
+#black-zone-bonuses-table td.cb-city,
+#black-zone-locations-table td.cb-city {
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+}
+#city-bonuses-table td.cb-base,
+#black-zone-bonuses-table td.cb-base {
+  color: #93c5fd;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+#city-bonuses-table td.cb-crafts { max-width: 360px; }
+#city-bonuses-table td.cb-refine { max-width: 160px; }
+#city-bonuses-table td.cb-butcher,
+#city-bonuses-table td.cb-crops,
+#city-bonuses-table td.cb-herbs,
+#city-bonuses-table td.cb-byproducts { max-width: 180px; }
+
+/* Black Zone tables — numeric columns right-aligned, focus columns tinted so
+   the with/without-focus pairs read apart at a glance. */
+#black-zone-bonuses-table td.bz-num,
+#black-zone-locations-table td.bz-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+#black-zone-bonuses-table td.bz-focus,
+#black-zone-locations-table td.bz-focus { color: #86efac; }
+#black-zone-locations-table td.bz-note {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  max-width: 200px;
+}
+#black-zone-locations-table td.cb-crafts { max-width: 360px; }
+
+#city-bonuses-table .cb-chip,
+#black-zone-locations-table .cb-chip {
+  display: inline-block;
+  background: #1f2937;
+  border: 1px solid #3e5e82;
+  color: #cbd5e1;
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin: 2px 2px 2px 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+#brecilien-fees-table td.bf-label {
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+}
+#brecilien-fees-table td.bf-fee {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #cbd5e1;
+}
+#brecilien-fees-table th { text-align: right; }
+#brecilien-fees-table th:first-child { text-align: left; }
+#brecilien-fees-table td.bf-group {
+  font-weight: 700;
+  color: #93c5fd;
+  background: #1a2433;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 9px;
+  padding-bottom: 5px;
+}
+
+/* Top-10 boards — per-category accent badges */
+#joined-summary-table .cat-badge,
+#joined-focus-table .cat-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.cat-crafting-table         { background: #3e5e82; color: #e5e7eb; }
+.cat-flipping-table         { background: #4b4e82; color: #e5e7eb; }
+.cat-transport-table        { background: #2e6648; color: #e5e7eb; }
+.cat-consumable-table       { background: #7a3e3e; color: #e5e7eb; }
+.cat-mounts-table           { background: #7a5e2a; color: #e5e7eb; }
+.cat-farming-table          { background: #5e9e78; color: #1a1a1a; }
+.cat-enchanting-table       { background: #b07ac4; color: #1a1a1a; }
+.cat-transmute-table        { background: #c4c47a; color: #1a1a1a; }
+.cat-rerolling-table        { background: #9ca3af; color: #1a1a1a; }
+.cat-rolling-table          { background: #c4a07a; color: #1a1a1a; }
+.cat-faction-spending-table { background: #3d6e50; color: #e5e7eb; }
+.cat-laborers-table         { background: #4e5158; color: #e5e7eb; }
+#joined-summary-table .joined-jump,
+#joined-focus-table .joined-jump {
+  color: #7ab8c4;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+#joined-summary-table .joined-jump:hover,
+#joined-focus-table .joined-jump:hover { text-decoration: underline; }
+

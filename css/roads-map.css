@@ -1,0 +1,193 @@
+/* Roads of Avalon node-link map (js/roads-graph-view.js). */
+
+.roads-map-wrap {
+  position: relative;
+  margin-bottom: 10px;
+  border: 1px solid #2b3242;
+  border-radius: 6px;
+  background: radial-gradient(circle at 50% 40%, #191f2b 0%, #12161f 70%);
+  overflow: hidden;
+}
+
+#roads-map {
+  display: block;
+  width: 100%;
+  /* Kept in step with VIEW_H in js/roads-graph-view.js. */
+  height: 620px;
+  touch-action: none;
+  cursor: grab;
+}
+
+#roads-map:active { cursor: grabbing; }
+
+/* The map is focusable so Del reaches it; a ring around the whole box would be
+   noise, and the selected node/portal is the real focus indicator. */
+#roads-map:focus,
+#roads-map:focus-visible { outline: none; }
+
+.roads-edge {
+  stroke: #55617a;
+  stroke-linecap: round;
+  opacity: 0.85;
+  /* The visible line is drawn OVER its hit twin, so it has to be see-through to
+     the pointer or a click dead-centre on a portal would land on nothing that
+     listens. All portal gestures belong to the twin. */
+  pointer-events: none;
+}
+
+/* Fat invisible twin under each portal line — a 1.6px stroke is unclickable.
+   `pointer-events: stroke` hit-tests the stroke whether or not it is painted,
+   which a transparent one is not. */
+.roads-edge-hit {
+  stroke: transparent;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* The Brecilien portal: permanent, and the only DIRECTED line on the map. Pale
+   and solid so it never reads as a tunnel exit waiting to expire; the arrowhead
+   says the trip is one way. */
+.roads-edge.is-brecilien {
+  stroke: #cbd5e1;
+  opacity: 0.75;
+}
+
+.roads-brecilien-arrow { fill: #cbd5e1; }
+
+/* A permanent link has no timer, so it never greys out the way a portal does. */
+.roads-edge.is-brecilien.is-dead {
+  stroke: #cbd5e1;
+  stroke-dasharray: none;
+  opacity: 0.75;
+}
+
+.roads-node.is-brecilien .roads-node-dot {
+  stroke: #cbd5e1;
+  stroke-width: 2;
+}
+
+.roads-edge.is-dead {
+  stroke: #3a4152;
+  stroke-dasharray: 5 4;
+  opacity: 0.5;
+}
+
+.roads-edge.is-route {
+  stroke: #e2b53f;
+  opacity: 1;
+}
+
+/* Selected — what Del would remove. Red, so it reads apart from the gold route
+   even when the selection sits on a highlighted path. */
+.roads-edge.is-selected {
+  stroke: #f87171;
+  opacity: 1;
+}
+
+.roads-node { cursor: pointer; }
+
+.roads-node-dot {
+  stroke: #0e121a;
+  stroke-width: 1.5;
+}
+
+.roads-node-exit-ring {
+  fill: none;
+  stroke: #9ae6b4;
+  stroke-width: 1.4;
+  stroke-dasharray: 4 3;
+}
+
+.roads-node.is-route .roads-node-dot { stroke: #e2b53f; stroke-width: 2.5; }
+.roads-node.is-selected .roads-node-dot { stroke: #f87171; stroke-width: 3; }
+
+.roads-node-rest {
+  fill: none;
+  stroke: #a78bfa;
+  stroke-width: 1.2;
+  opacity: 0.8;
+}
+
+.roads-node-label {
+  fill: #cbd5e1;
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: #12161f;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.roads-node.is-route .roads-node-label { fill: #f3d78a; }
+
+/* Biome caption (Forest/Swamp/…) — the small line above the name. */
+.roads-node-biome {
+  fill: #8b94a7;
+  font-size: 8px;
+  paint-order: stroke;
+  stroke: #12161f;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.roads-node.is-route .roads-node-biome { fill: #cfa95e; }
+
+/* Crowded map: labels only where they matter — hovered or on the route. */
+.is-dense .roads-node-label { opacity: 0; transition: opacity 0.1s; }
+.is-dense .roads-node:hover .roads-node-label,
+.is-dense .roads-node.is-selected .roads-node-label,
+.is-dense .roads-node.is-route .roads-node-label { opacity: 1; }
+
+.roads-node-tier {
+  fill: #0e121a;
+  font-size: 8px;
+  font-weight: 600;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.roads-map-tip {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  max-width: 260px;
+  padding: 6px 9px;
+  border: 1px solid #2b3242;
+  border-radius: 4px;
+  background: #10141d;
+  color: #e5e7eb;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.roads-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-top: 1px solid #2b3242;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.roads-map-legend .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+
+.roads-map-empty {
+  padding: 28px 14px;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  text-align: center;
+}

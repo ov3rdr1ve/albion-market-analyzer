@@ -1,0 +1,199 @@
+/* Section grouping — the 27 tables are bundled into a handful of themed
+   <section class="tgroup"> blocks (Market, Crafting, Upgrades, Production,
+   Faction, Roads, Reference). Each group gets a banded header that collapses
+   the whole block, and a coloured rail down its left edge so it is obvious at
+   a glance which band a heading belongs to while scrolling.
+
+   Group collapse is independent of the per-table collapse wired in js/app.js:
+   collapsing a group only hides the wrapper, so each table keeps its own
+   collapsed/expanded state for when the group is reopened. */
+
+.tgroup {
+  --tgroup-accent: #6b7280;
+  margin: 26px 0 0;
+}
+
+.tgroup:first-of-type {
+  margin-top: 12px;
+}
+
+/* Per-group accents. Deliberately muted — they tint the rail and the header
+   title, never a large fill, so the tables stay the loudest thing on screen. */
+#group-market {
+  --tgroup-accent: #4ea3c4;
+}
+#group-crafting {
+  --tgroup-accent: #c49a4e;
+}
+#group-upgrades {
+  --tgroup-accent: #a97ac4;
+}
+#group-production {
+  --tgroup-accent: #6fb36f;
+}
+#group-faction {
+  --tgroup-accent: #c4704e;
+}
+#group-roads {
+  --tgroup-accent: #7a8fc4;
+}
+#group-reference {
+  --tgroup-accent: #8b8f96;
+}
+
+.tgroup-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 9px 14px;
+  background: linear-gradient(90deg, #26272b 0%, #202124 100%);
+  border: 1px solid #34363c;
+  border-left: 4px solid var(--tgroup-accent);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tgroup-head:hover {
+  background: linear-gradient(90deg, #2c2d32 0%, #232428 100%);
+}
+
+.tgroup-title {
+  font-size: 1.05rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tgroup-accent);
+}
+
+.tgroup-sub {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.tgroup-count {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  background: #1b1c1f;
+  border: 1px solid #3a3d44;
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.tgroup-indicator {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* Rail: the accent continues down the left of the group's contents so a
+   heading scrolled far from its band still reads as part of it. */
+.tgroup-body {
+  border-left: 4px solid var(--tgroup-accent);
+  border-bottom-left-radius: 6px;
+  margin-left: 0;
+  padding: 2px 0 10px 14px;
+}
+
+.tgroup.collapsed > .tgroup-body {
+  display: none;
+}
+
+.tgroup.collapsed > .tgroup-head {
+  border-bottom-left-radius: 6px;
+}
+
+/* Inside a group the per-table <h2> no longer needs its big top margin — the
+   group header already provides the separation above the first table. */
+.tgroup-body > h2:first-child,
+.tgroup-body > .section-title:first-child {
+  margin-top: 0.6rem;
+}
+
+/* A group holding ONE section would stack two headers saying the same thing,
+   so js/section-groups.js marks it .solo: the group's own header is dropped
+   and the section's <h2> is dressed as the band instead. Same rail, same
+   banded head, same accent as every other group — one level deep rather than
+   two. The heading keeps its per-table collapse from js/app.js, which is why
+   it stays where it is in the DOM (that code walks forward from the <h2> to
+   find its table) and is pulled out of the body's indent by margin rather
+   than moved. */
+.tgroup.solo > .tgroup-head {
+  display: none;
+}
+
+.tgroup.solo > .tgroup-body {
+  /* No padding above or below: the band is the body's first child, and the
+     bottom padding would otherwise leave a stub of rail hanging under the
+     header while the section is collapsed. Groups are spaced by their own
+     top margin. */
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.tgroup.solo > .tgroup-body > h2:first-child,
+.tgroup.solo > .tgroup-body > .section-title:first-child {
+  /* Back out over the rail (4px) and the body's indent (14px) so the band
+     starts at the group's own left edge, like a .tgroup-head does. */
+  margin: 0 0 2px -18px;
+  padding: 9px 14px;
+  background: linear-gradient(90deg, #26272b 0%, #202124 100%);
+  border: 1px solid #34363c;
+  border-left: 4px solid var(--tgroup-accent);
+  border-radius: 6px;
+  user-select: none;
+  /* index.html sets flex-wrap:wrap inline on these headings; in a band the long
+     intro must shrink on one line instead of wrapping the whole header onto
+     three, and a flex item wraps rather than shrinks while wrapping is allowed.
+     Beating an inline style needs the flag. */
+  flex-wrap: nowrap !important;
+}
+
+.tgroup.solo > .tgroup-body > h2:first-child:hover {
+  background: linear-gradient(90deg, #2c2d32 0%, #232428 100%);
+}
+
+/* Only the title itself takes the group's uppercase accent treatment — the
+   intro text and the live status spans beside it stay ordinary. */
+.tgroup.solo > .tgroup-body > h2:first-child > span:first-child {
+  font-size: 1.05rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tgroup-accent);
+}
+
+/* A group's subtitle is a few words; this heading's intro is a paragraph, and
+   left to wrap it made the band three times the height of every other one.
+   It shrinks to whatever room is left on the line — the full text is still
+   there on hover, and in the panel below once the section is open. */
+.tgroup.solo > .tgroup-body > h2:first-child small {
+  flex: 1 1 0;
+  min-width: 0;
+  font-weight: normal;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The collapse arrow js/app.js appends sits at the far right, where the group
+   indicator does. */
+.tgroup.solo > .tgroup-body > h2:first-child > span:last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 700px) {
+  .tgroup-sub {
+    flex-basis: 100%;
+  }
+  .tgroup-body {
+    padding-left: 8px;
+  }
+  /* Follows the narrower indent: 8px padding + the 4px rail. */
+  .tgroup.solo > .tgroup-body > h2:first-child,
+  .tgroup.solo > .tgroup-body > .section-title:first-child {
+    margin-left: -12px;
+  }
+}

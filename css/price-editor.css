@@ -1,0 +1,119 @@
+/**
+ * The inline price editor's city dropdown (js/app.js, .price-editable click).
+ *
+ * An option row states three different kinds of fact about one city — the two
+ * order prices, how old each of them is, and the 24h volume — and the table's
+ * price cell already paints those three apart: the number light, the
+ * "2h ago · 3,763 vol" badge under it in the freshness ramp / grey. The editor
+ * showed volume only, in one colour, so a price about to be overwritten gave no
+ * clue whether it was captured minutes or days ago.
+ *
+ * A native <option> cannot colour parts of its text. Chromium's customizable
+ * select can (appearance: base-select, Chrome 135+; this app ships Electron 42
+ * = Chromium 142), so the markup from cityOptionHtml (js/price-edit-dropdown.js)
+ * renders as real spans. Everything here is behind @supports, and the fallback
+ * is the plain-text label: same content, one colour, native control.
+ *
+ * Kept out of css/styles.css, which is at the file-size limit (see
+ * css/controls.css).
+ */
+
+/* ── The closed control ──────────────────────────────────────────────────── */
+/* Also the native fallback's box, so it lives outside the @supports block. */
+.pe-city-select {
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #3e5e82;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+  border-radius: 3px;
+  margin-right: 4px;
+  min-width: 200px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* ── Customizable select ─────────────────────────────────────────────────── */
+@supports (appearance: base-select) {
+  .pe-city-select,
+  .pe-city-select::picker(select) {
+    appearance: base-select;
+  }
+
+  /* The authored <button><selectedcontent> is the closed control in this mode.
+     It inherits the box above; only the layout is set here. */
+  .pe-city-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pe-city-select::picker-icon {
+    color: #9ca3af;
+  }
+
+  /* The open list. max-height because nine cities plus the Black Market can
+     outgrow a short window, and the popup itself is position:fixed. */
+  .pe-city-select::picker(select) {
+    background: #1f2937;
+    border: 1px solid #3e5e82;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+    padding: 2px;
+    max-height: 60vh;
+    overflow-y: auto;
+    z-index: 10000; /* above the .pe-popup it belongs to */
+  }
+
+  .pe-city-select option {
+    padding: 3px 6px;
+    border-radius: 3px;
+    color: #e5e7eb;
+    background: transparent;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .pe-city-select option:hover,
+  .pe-city-select option:focus {
+    background: #2b3a4d;
+  }
+  .pe-city-select option:checked {
+    background: #3e5e82;
+  }
+  /* The UA tick would push every row right for one city's benefit; the
+     highlight already says which one is picked. */
+  .pe-city-select option::checkmark {
+    display: none;
+  }
+}
+
+/* ── The parts of one row ────────────────────────────────────────────────── */
+/* The age's colour is NOT here: formatPriceAge (js/app.js) returns it per row
+   and cityOptionHtml writes it inline, the same way the table and the quality
+   ladders emit the ramp. The ramp is data, not a theme. */
+.pe-opt-price {
+  color: #e5e7eb;
+}
+.pe-opt-vol {
+  color: #9ca3af;
+}
+.pe-opt-age {
+  font-size: 0.92em;
+}
+/* The quality tag on a Good+ ask shown where the Normal ask is empty. */
+.pe-opt-q {
+  color: #c4a35a;
+  font-size: 0.92em;
+}
+.pe-opt-ov {
+  color: #9e8840;
+}
+
+/* ── The age beside the SELL ORDER / BUY ORDER captions ──────────────────── */
+/* The caption is uppercase and letter-spaced; the age is a value, so it opts
+   out of both. Its colour is written inline from the same ramp. */
+.pe-cap-age {
+  margin-left: 4px;
+  font-size: 0.62rem;
+  text-transform: none;
+  letter-spacing: 0;
+}

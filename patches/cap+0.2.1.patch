@@ -1,0 +1,15 @@
+diff --git a/node_modules/cap/src/binding.cc b/node_modules/cap/src/binding.cc
+index 04f3d4b..eb52105 100644
+--- a/node_modules/cap/src/binding.cc
++++ b/node_modules/cap/src/binding.cc
+@@ -100,7 +100,9 @@ class Pcap : public Nan::ObjectWrap {
+       if (pcap_handle && !closing) {
+ #ifdef _WIN32
+         if (wait) {
+-          UnregisterWait(wait);
++          // Blocking: waits out an OnPacket already in flight, which would
++          // otherwise uv_async_send on a handle closed (and freed) below.
++          UnregisterWaitEx(wait, INVALID_HANDLE_VALUE);
+           wait = nullptr;
+         }
+         uv_close((uv_handle_t*)&async, cb_close);

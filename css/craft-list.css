@@ -1,0 +1,209 @@
+/* ── My Crafting List panel ────────────────────────────────────────────────
+   Everything that styles #craft-list-table itself: the one-column shell, its
+   per-group clone tables (js/render-craft-list.js _clGroupTableHtml), the
+   list's own tighter caps on those clones, row states (pending / held /
+   missing / totals / parked), and the Qty / Total Buy Cost / focus-budget
+   controls in each row.
+
+   Split out of css/styles.css, which had grown past the 800-line limit this
+   project keeps. Loaded right after styles.css in index.html — a separate
+   sheet still cascades after the WHOLE of styles.css regardless of where it
+   sits among the files that follow, which is what lets `#craft-list-table
+   td.cell-mats` below beat the per-table `:is(#mounts-table, .cl-inner[...])`
+   caps in styles.css at equal specificity (source order decides the tie).
+
+   Guarded by tests/craft-list-width-caps.test.cjs, which reads this file
+   together with css/styles.css and css/table-density.css.
+
+   Rows are rendered by their SOURCE table's formatter, so the groups have
+   different column counts AND different column meanings. Each therefore gets
+   its OWN table (js/render-craft-list.js _clGroupTableHtml): in one shared
+   table an HTML column is sized by the widest cell anywhere in it, so the
+   Crafting Planner's multi-line Profit/Journal cells stretched the Consumables
+   group's Margin and Pure Profit columns to match and pushed the list way off
+   screen.
+
+   #craft-list-table survives as the one-column layout shell holding the band
+   rows, the group tables and the totals row. Fixed layout so that single
+   column cannot be widened by an inner table — the inner one scrolls instead. */
+#craft-list-table {
+  table-layout: fixed;
+  width: 100%;
+}
+.table-wrap > #craft-list-table {
+  width: 100%; /* beats the max-content the shared .table-wrap rule sets */
+}
+#craft-list-table > tbody > tr.cl-group-row > td.cl-group-cell {
+  padding: 0;
+  border: none;
+}
+/* Each group scrolls on its own, so one wide group never drags the others. */
+.cl-group-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.cl-group-wrap > table.cl-inner {
+  width: 100%;
+  min-width: 100%;
+  margin-bottom: 0;
+}
+#craft-list-table tr.cl-group td {
+  background: #1c2230;
+  color: #8fb3c4;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 7px 12px;
+  border-top: 1px solid #2a3142;
+}
+/* The cloned column headers. They WRAP: a group is the source table plus three
+   list columns, and a nowrap "Profit / 10k Focus" or "Mats / 10k Focus" sizes
+   its whole column off the header rather than off the numbers under it — which
+   is what pushed the widest groups (Breeding & Mounts, Farming) off screen.
+   The cap is a wrap point, not a clamp: a longer word still sets the width. */
+#craft-list-table tr.cl-colhead th {
+  background: #171c26;
+  color: #7d8899;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 6px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 92px;
+  vertical-align: bottom;
+}
+/* The caret is a ::after on th.sortable — nothing to unwrap, it rides the last
+   word of the label. */
+/* Wide cells are tighter INSIDE the list than in their own table: a group is
+   the source table's columns plus the list's three (Qty, Total Buy Cost, Total
+   Profit), so a group that already fills the screen on its own cannot also
+   afford the source's caps. Scoped on the shell id so these beat the per-table
+   `:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"])` caps above —
+   same specificity, and craft-list.css cascades after ALL of styles.css
+   regardless of index.html's link order among the files after it.
+
+   Measured at an 1888px window on the Breeding & Mounts group (18 columns,
+   the widest in the list, wrap clientWidth 1828px): as `width: max-content`
+   the group needed 1822px compact / 1844px roomy and overflowed — an
+   auto-layout table always sums its columns' max-content widths, so it never
+   shrinks, only overflows. `.cl-group-wrap > table.cl-inner` is `width: 100%`
+   above instead: the group now takes the wrap's own width and its headers and
+   mats wrap to fit, measured with zero overflow down to a 1200px wrap. Only
+   below the columns' min-content does a group scroll inside .cl-group-wrap —
+   that is still the design, not a regression. */
+#craft-list-table td.cell-item { max-width: 115px; }
+#craft-list-table td.cell-route { max-width: 115px; }
+#craft-list-table td.cell-mats { max-width: 210px; }
+#craft-list-table td.cell-focus-mats { max-width: 140px; }
+#craft-list-table td.cell-note { max-width: 120px; }
+/* cell-num is deliberately NOT capped: its numbers do not wrap, so a cap only
+   moves the age/volume badge onto its own line and the column gets WIDER
+   (measured 101px → 116px). */
+
+#craft-list-table tr.cl-missing td,
+#craft-list-table tr.cl-pending td { background: #1a1d26; }
+/* A row the app is still computing, not one the user has to go and scan. The
+   pulse is the only difference the eye needs: same layout, same controls. */
+#craft-list-table tr.cl-pending td { animation: cl-pending-pulse 1.6s ease-in-out infinite; }
+@keyframes cl-pending-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+/* Reduced motion stops the pulse. It sits HERE, after the rule it cancels: the
+   two selectors tie on specificity, so source order decides — and in
+   styles.css, where it used to live, it cascaded before this sheet and never
+   won. Guarded by tests/craft-list-reduced-motion.test.cjs. */
+@media (prefers-reduced-motion: reduce) {
+  #craft-list-table tr.cl-pending td { animation: none; }
+}
+/* A row carried over from the previous render because its source did not
+   resolve during the pass (js/render-craft-list.js _clHeldRows). Its numbers
+   are the LAST ones computed, and while the pass runs js/recalc-cell-mark.js is
+   already dimming and spinning them — this accent is what still says so once
+   the pass ends and those marks come down. No layout, so the row it replaces is
+   exactly the width it was. */
+#craft-list-table tr.cl-held > td:first-child {
+  box-shadow: inset 2px 0 0 #9e8840;
+}
+#craft-list-table tr.cl-totals td,
+#craft-list-mats-table tr.cl-totals td {
+  background: #1c2230;
+  border-top: 1px solid #374151;
+  font-weight: 600;
+}
+#craft-list-table td.cl-empty,
+#craft-list-mats-table td {
+  color: inherit;
+}
+#craft-list-table td.cl-empty {
+  color: #9ca3af;
+  font-style: italic;
+  padding: 14px 12px;
+}
+.cl-save-warning {
+  font-size: 0.78rem;
+  font-weight: normal;
+  color: #e0a37b;
+  background: #2a2119;
+  border: 1px solid #6b4a2f;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+.cl-qty-cell { width: 68px; text-align: center; white-space: nowrap; }
+/* "10k": fill the quantity with what one focus bar buys. Sits UNDER the box, so
+   the column keeps its 68px and the list gets no wider. */
+button.cl-qty-focus {
+  display: block;
+  margin: 2px auto 0;
+  width: 58px;
+  background: #232a38;
+  color: #9ca3af;
+  border: 1px solid #3a4459;
+  border-radius: 3px;
+  padding: 0;
+  line-height: 15px;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+button.cl-qty-focus:hover { background: #2f3a4d; color: #f3f4f6; border-color: #3e5e82; }
+/* Focus-loss warning under Total Profit: click sets Qty to what the budget funds. */
+button.cl-row-focusloss {
+  display: block; margin: 2px 0 0; padding: 0; background: none; border: 0;
+  color: #f59e0b; font: inherit; font-size: 0.7rem; line-height: 1.25;
+  text-align: left; cursor: pointer;
+  /* td is nowrap; the button wraps so it never widens the Total column. */
+  white-space: normal; overflow-wrap: anywhere; max-width: 100%;
+}
+button.cl-row-focusloss:hover { color: #fbbf24; text-decoration: underline; }
+input.cl-qty {
+  width: 58px;
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #3e5e82;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+  text-align: right;
+}
+/* Total Buy Cost — a spend, not a result, so it stays the neutral silver the
+   source tables use for prices rather than borrowing the profit colours. */
+.cl-row-cost { color: #cbd5e1; }
+.cl-focus-total { color: #9ca3af; font-size: 0.82rem; }
+.cl-focus-days { color: #6b7280; font-size: 0.78rem; }
+/* Focus the budget could not cover: those units run at the base return rate, so
+   they buy more and earn less. Amber, not red — it is a limit, not an error. */
+.cl-focus-short { color: #d9a441; font-size: 0.82rem; }
+/* Footer laborer headcount — the same input as a row quantity, a touch wider
+   because it holds a whole-list figure rather than one row's count. */
+input.cl-laborers { width: 64px; }
+/* Focus budget: five digits plus the spinner, so 10,000 never clips. */
+input.cl-focus-budget { width: 76px; }
+
+/* A parked row (quantity 0) — still on the list, still click-to-edit, counting
+   for nothing. Dimmed as a whole EXCEPT its quantity box, which is the control
+   that brings it back, and its ✕, which is how it leaves. */
+tr.cl-qty-zero > td { opacity: 0.45; }
+tr.cl-qty-zero > td.cl-qty-cell,
+tr.cl-qty-zero > td.cell-add { opacity: 1; }
+tr.cl-qty-zero .cl-row-total,
+tr.cl-qty-zero .cl-row-cost { color: #6b7280; }

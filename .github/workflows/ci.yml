@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # --ignore-scripts: the postinstall hook compiles the native `cap` module
+      # (Npcap capture) for Electron, which lint and the node:test suite never
+      # load. patch-package still runs so node_modules matches a normal install.
+      - run: npm ci --ignore-scripts
+      - run: npx patch-package
+      - run: npm run lint
+      - run: npm test

@@ -1,0 +1,4 @@
+{
+  // Long prose lines are fine in the docs.
+  "MD013": false
+}

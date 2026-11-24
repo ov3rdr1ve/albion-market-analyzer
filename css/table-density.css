@@ -1,0 +1,227 @@
+/* ── Table width discipline ────────────────────────────────────────────────
+   Everything that decides how WIDE a data table is: the per-class width caps
+   and the compact density that tightens them.
+
+   Split out of css/styles.css, which had grown past the 800-line limit this
+   project keeps. Loaded AFTER styles.css in index.html and that order matters:
+   the compact restatements at the bottom beat the per-table `#id` rules that
+   stayed behind only by equal specificity plus later source order.
+
+   Guarded by tests/table-column-caps and tests/table-density, both of which
+   read this file together with css/styles.css. */
+
+/* Wide cells wrap and cap their width so a table fits the viewport without an
+   inner horizontal scrollbar. The renderers TAG these cells (class="cell-mats"
+   …) instead of the CSS counting columns: the old `td:nth-child(n)` rules aimed
+   at whatever position a column happened to sit at when they were written, and
+   every column inserted since silently moved the cap onto its neighbour — the
+   Crafting table's 200px cap ended up on "Profit / 10k Focus" while the wide
+   "Mats to Buy" it was meant for went uncapped and pushed the table off-screen.
+   overflow-wrap:anywhere breaks unbreakable strings like raw item IDs
+   (e.g. UNIQUE_CONSUMABLE_EVENT_EASTER_2020).
+
+   Guarded by tests/table-column-caps — every class here must be emitted by a
+   renderer, and no data table may go back to a positional cap. */
+.data-table td.cell-item,
+.data-table td.cell-route,
+.data-table td.cell-mats,
+.data-table td.cell-focus-mats,
+.data-table td.cell-note,
+.data-table td.cell-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Recipe materials / ingredients — the widest cell in any table (several lines
+   of "12x Elder's Planks @ 29,085 (from Thetford) (~6.2x consumed)"). */
+.data-table td.cell-mats { max-width: 300px; }
+/* One step of the recursive chain breakdown (js/render-chain-breakdown.js).
+   Each level nests inside its parent, so this single inset compounds on its own
+   — the renderer must NOT scale it by depth. Global rather than per-table: My
+   Crafting List clones source-table rows into #craft-list-table, where any
+   id-scoped rule stops matching and the indent used to blow out to 160px. */
+.chain-indent { margin-left: 8px; line-height: 1.3; }
+/* Item name ("Avalonian Basilisk [T7]" wraps fine). */
+.data-table td.cell-item { max-width: 170px; }
+/* "Buy: X → Craft: Y → Sell: Z". */
+.data-table td.cell-route { max-width: 190px; }
+/* Any other wide TEXT column: a bonus-city pair, a yield with its surplus badge,
+   an item name that is NOT the table's identity column. cell-item would cap
+   those just as well, but it is also STICKY (see css/styles.css) — pinning a
+   column that is not the one immediately after the "+" gutter paints it over
+   its neighbour, which is the bug tests/craft-list-mats-sticky-offset exists
+   for. So this class caps and wraps exactly like cell-item and pins nothing. */
+.data-table td.cell-text { max-width: 160px; }
+/* The city names in that cell are click-to-override (js/route-cell.js). Same
+   dotted underline every other inline price span carries (matPriceSpan), so the
+   affordance reads the same wherever a price hides behind a word. Only the legs
+   that name a priced item get the span — a craft/refine city stays plain text. */
+.data-table td.cell-route .price-editable {
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+/* The 10k-focus shopping list. */
+.data-table td.cell-focus-mats { max-width: 190px; }
+/* Multi-line explanatory cells: journal fill, best focus play, leveling path. */
+.data-table td.cell-note { max-width: 200px; }
+/* Two competing plays stacked in one cell ("<silver> buy filled · T6 @150%").
+   Its own class, not cell-note: this one is two <div> lines rather than a
+   wrapping paragraph, so it wants a slightly wider box and must not inherit the
+   150px the Building Costs table pins cell-note to. */
+.data-table td.cell-play {
+  max-width: 215px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* The "+" column: a fixed, narrow gutter on every profit table (the button that
+   puts the row on My Crafting List). Capped here like every other cell class so
+   it can never take width from the data columns. */
+.data-table td.cell-add {
+  width: 30px;
+  max-width: 30px;
+  padding: 2px;
+  text-align: center;
+}
+.data-table th.cell-add { width: 30px; text-align: center; color: #6b7280; }
+.add-row-btn,
+.cl-row-btn {
+  background: #232a38;
+  color: #9ca3af;
+  border: 1px solid #3a4459;
+  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+}
+.add-row-btn:hover,
+.cl-row-btn:hover { background: #2f3a4d; color: #f3f4f6; }
+.add-row-btn.is-added { color: #5e9e78; border-color: #3d6b52; }
+.cl-row-btn.cl-remove:hover { color: #e07b7b; border-color: #7a3f3f; }
+
+/* Numeric cells carrying a trailing age/volume badge: wrap at the badge's
+   spaces, never inside a number, so digits stay intact. */
+.data-table td.cell-num {
+  white-space: normal;
+  max-width: 120px;
+}
+
+/* Farming is 15 columns wide, and My Crafting List clones them into an
+   18-column group — the widest layout in the app after the crafting list's own.
+   Every other table that wide (mounts, laborers, transport, skins trading …)
+   carries a block like this in css/styles.css; Farming never got one, so its
+   headers stayed on one nowrap line and "Profit / 10k Focus" and "Seeds to
+   Plant (10k Focus)" were sized by their LABELS rather than their data. It
+   lives here rather than in styles.css because this file is the one that owns
+   how wide a table gets, and styles.css is already past the 800-line limit.
+
+   Restated for compact further down: these are ID rules, so they outrank
+   `body.compact .data-table th/td` on their own. */
+:is(#farming-table, .cl-inner[data-cl-group="farming-table"]) th { white-space: normal; }
+:is(#farming-table, .cl-inner[data-cl-group="farming-table"]) th,
+:is(#farming-table, .cl-inner[data-cl-group="farming-table"]) td { padding: 0.2rem 0.3rem; font-size: 0.78rem; }
+
+
+/* ── Compact table density (body.compact, js/app-zoom.js) ──────────────────
+   The widest tables run to 17 columns (My Crafting List clones its source
+   table's header and prepends three of its own), and .table-wrap only gives
+   those a scrollbar — it cannot make them fit. This trades whitespace for
+   columns: tighter padding, a smaller face, and every cap class pulled in.
+
+   Cap CLASSES only, never td:nth-child — the same rule the base sheet above
+   explains, guarded by tests/table-column-caps. Per-table overrides further
+   down the file are more specific than these, so they are tightened alongside
+   their own blocks rather than fought with !important. */
+body.compact .data-table th,
+body.compact .data-table td {
+  padding: 0.12rem 0.22rem;
+  font-size: 0.72rem;
+}
+body.compact .data-table td.cell-item { max-width: 110px; }
+body.compact .data-table td.cell-route { max-width: 120px; }
+body.compact .data-table td.cell-mats { max-width: 190px; }
+body.compact .data-table td.cell-focus-mats { max-width: 120px; }
+body.compact .data-table td.cell-note { max-width: 130px; }
+body.compact .data-table td.cell-play { max-width: 140px; }
+body.compact .data-table td.cell-text { max-width: 110px; }
+/* The grey sub-lines inside those cells — a route's "+ seeds → Bridgewatch"
+   legs, the "8x cycles · 72 plots @ 1,125 focus ea" action line — are kept and
+   shrunk rather than hidden: the cap above already governs the WIDTH, so
+   hiding them would drop information without buying a pixel. */
+body.compact .data-table td.cell-route small,
+body.compact .data-table td.cell-mats small,
+body.compact .data-table td.cell-focus-mats small,
+body.compact .data-table td.cell-note small,
+body.compact .data-table td.cell-text small {
+  font-size: 0.64rem;
+  line-height: 1.15;
+}
+body.compact .data-table td.cell-num { max-width: 90px; }
+body.compact #flipping-table td.cell-num { min-width: 128px; max-width: 150px; }
+/* cell-board is a Skins Trading column only, so its compact cap sits with the
+   other #skins-trading-table rules below rather than being written app-wide
+   here — the renderer passes that class to priceTd, never as a literal
+   class attribute, which is what tests/table-column-caps looks for. */
+body.compact .data-table td.cell-add,
+body.compact .data-table th.cell-add { width: 22px; max-width: 22px; }
+body.compact .add-row-btn,
+body.compact .cl-row-btn { width: 18px; height: 18px; font-size: 0.75rem; }
+body.compact .cl-qty-cell { width: 52px; }
+body.compact input.cl-qty { width: 44px; }
+body.compact button.cl-qty-focus { width: 44px; line-height: 13px; font-size: 0.65rem; }
+body.compact input.cl-laborers { width: 50px; }
+body.compact input.cl-focus-budget { width: 62px; }
+
+/* Eight tables already carry their own tightening further down this file, and
+   those rules are ID-specific — they outrank the class selectors above. Compact
+   has to restate them at a higher specificity or it would visibly do nothing on
+   exactly the widest tables it exists for.
+
+   Seven of the eight also render inside My Crafting List as
+   `.cl-inner[data-cl-group="<id>"]` (js/render-craft-list.js clones the source
+   table's rows into the list under a different id), so each selector below
+   reads `:is(#<id>, .cl-inner[data-cl-group="<id>"])`: the styles.css companion
+   carries ID specificity on its own, so a bare `#<id>` compact rule here would
+   still lose to the roomy `:is()` caps on the CLONE even while it correctly
+   beat them on the source table — the clone stayed at roomy padding/caps with
+   compact on. Brecilien Fees is never added to My Crafting List (no clone
+   anywhere in the CSS), so it stays bare. */
+body.compact :is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) th,
+body.compact :is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td,
+body.compact :is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) th,
+body.compact :is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) td,
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) th,
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td,
+body.compact :is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) th,
+body.compact :is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) td,
+body.compact :is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) th,
+body.compact :is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td,
+body.compact :is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) th,
+body.compact :is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td,
+body.compact :is(#farming-table, .cl-inner[data-cl-group="farming-table"]) th,
+body.compact :is(#farming-table, .cl-inner[data-cl-group="farming-table"]) td,
+body.compact #brecilien-fees-table th, body.compact #brecilien-fees-table td {
+  padding: 0.12rem 0.22rem;
+  font-size: 0.7rem;
+}
+body.compact :is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-item,
+body.compact :is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) td.cell-item,
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-item,
+body.compact :is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td.cell-item,
+body.compact :is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) td.cell-item { max-width: 115px; }
+body.compact :is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-route,
+body.compact :is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) td.cell-route,
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-route { max-width: 115px; }
+body.compact :is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-mats,
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-mats { max-width: 190px; }
+body.compact :is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-focus-mats,
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-focus-mats { max-width: 130px; }
+body.compact :is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-num,
+body.compact :is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td.cell-num { max-width: 90px; }
+body.compact :is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td.cell-board { max-width: 66px; }
+body.compact :is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) td { max-width: 96px; }
+body.compact :is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td.cell-item { max-width: 160px; }
+body.compact :is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td.cell-mats { max-width: 240px; }
+body.compact :is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td.cell-note { max-width: 120px; }
+

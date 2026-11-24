@@ -1,0 +1,44 @@
+/* Instant hover tooltip — styling for the shared box created by js/tooltips.js.
+   Kept in its own file (single responsibility, pairs with tooltips.js) so the
+   main stylesheet stays under the 800-line cap. */
+
+/* One shared box, positioned via position:fixed at viewport coords (see
+   computeTooltipPosition). Replaces the slow, OS-styled native `title` tooltip
+   across the whole app. pointer-events:none so it never eats hover/clicks or
+   becomes a mouseout relatedTarget. */
+#app-tooltip {
+  position: fixed;
+  z-index: 10050;
+  max-width: 340px;
+  /* Last-resort clip. Tooltip text is capped at the source (tests/tooltip-length
+     + tests/tooltip-runtime-length), so nothing should reach this; if something
+     does, it is cut off rather than running off the bottom of the viewport.
+     Clipped and not scrollable on purpose — pointer-events:none below means a
+     scrollbar could never be used. */
+  max-height: 60vh;
+  overflow: hidden;
+  background: #0f141c;
+  color: #e5e7eb;
+  border: 1px solid #3e5e82;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#app-tooltip.visible {
+  opacity: 1;
+}
+
+/* A "this has a tooltip" affordance for inline helper badges (small chips like
+   the gathering profession/rare tags), so hovering for help feels intentional. */
+[data-tip].tip-affordance,
+small[title],
+small[data-tip] {
+  cursor: help;
+}

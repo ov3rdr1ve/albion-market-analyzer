@@ -1,0 +1,77 @@
+{
+  "name": "albion-market-analyzer",
+  "version": "1.0.0",
+  "description": "Albion Online market analysis & crafting profit calculator",
+  "author": "Kirill K",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "npm run rebuild:electron && electron-builder --win",
+    "rebuild:electron": "electron-rebuild -f -w cap",
+    "rebuild:node": "npm rebuild cap",
+    "postinstall": "patch-package && node scripts/postinstall-rebuild.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "@eslint/js": "^10.0.1",
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.0",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "patch-package": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.kirill.albion-market-analyzer",
+    "productName": "Albion Market Analyzer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "!js/focus-costs.json",
+      "node_modules/cap/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/cap/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "build/npcap",
+        "to": "npcap",
+        "filter": [
+          "*.exe"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": "x64"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Albion Market Analyzer",
+      "artifactName": "${productName} Setup ${version}.${ext}",
+      "include": "build/installer.nsh"
+    }
+  },
+  "dependencies": {
+    "cap": "^0.2.1"
+  }
+}

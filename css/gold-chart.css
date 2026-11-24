@@ -1,0 +1,80 @@
+/* Gold Price chart — controls + indicator panel styling. */
+
+/* Cancel the global button bottom-margin inside the control bar so buttons
+   sit on the same vertical centre as the selects/interval group (align-items
+   centre otherwise pushes them 8px high). */
+.gold-controls button { margin-bottom: 0; }
+
+.gold-tf-btn {
+  background: transparent;
+  color: #9ca3af;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.gold-tf-btn:hover { background: #2a2d33; color: #e5e7eb; }
+.gold-tf-btn.active { background: #2962ff; color: #fff; }
+
+/* Indicator settings panel */
+#gold-ind-panel .gold-ind-block {
+  padding: 8px 0;
+  border-top: 1px solid #2d2f34;
+}
+#gold-ind-panel .gold-ind-block:first-child { border-top: none; }
+#gold-ind-panel h4 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#gold-ind-panel .gold-ma-row,
+#gold-ind-panel .gold-param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+#gold-ind-panel select,
+#gold-ind-panel input[type="number"] {
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-size: 0.82rem;
+}
+#gold-ind-panel input[type="number"] { width: 58px; }
+#gold-ind-panel input[type="color"] {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #4b5563;
+  border-radius: 3px;
+  background: #1f2937;
+  cursor: pointer;
+}
+#gold-ind-panel .gold-mini-btn {
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 2px 9px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+#gold-ind-panel .gold-mini-btn:hover { background: #2a2d33; }
+#gold-ind-panel .gold-ma-remove {
+  color: #c47a7a;
+  border-color: #5a3d3d;
+}
+#gold-ind-panel label { color: #e5e7eb; }
+#gold-ind-panel .gold-param-label {
+  color: #9ca3af;
+  font-size: 0.78rem;
+}

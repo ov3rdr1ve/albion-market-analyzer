@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Albion Market Analyzer Minimal</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/styles-tables.css" />
+    <link rel="stylesheet" href="css/styles-panels.css" />
+    <!-- My Crafting List panel's own CSS, split out of styles.css for the
+         800-line limit. Placed right after it so it still cascades after the
+         whole of styles.css regardless of link order among the files below. -->
+    <link rel="stylesheet" href="css/craft-list.css" />
+    <!-- Width caps + compact density. MUST follow styles.css: its
+         body.compact restatements beat the per-table #id rules there only by
+         equal specificity plus later source order. -->
+    <link rel="stylesheet" href="css/table-density.css" />
+    <link rel="stylesheet" href="css/tooltips.css" />
+    <link rel="stylesheet" href="css/gold-chart.css" />
+    <link rel="stylesheet" href="css/spec-panel.css" />
+    <link rel="stylesheet" href="css/table-groups.css" />
+    <link rel="stylesheet" href="css/controls.css" />
+    <link rel="stylesheet" href="css/price-editor.css" />
+    <link rel="stylesheet" href="css/roads-map.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>"
+    />
+  </head>
+  <!-- Compact table density is always on: the widest tables run to 14 columns
+       and are unreadable at the roomy spacing. Set here so the first paint is
+       already compact and nothing reflows once the scripts run. -->
+  <body class="compact">
+    <!-- Not deferred: it measures from the top of the document, so it has to
+         run before the 148 deferred catalog scripts below. -->
+    <script src="js/boot-timing.js"></script>
+
+    <h1>Albion Market Analyzer</h1>
+
+    <div>
+      <label id="api-status" style="color: #e5e7eb; font-size: 0.9rem">
+        <span data-i18n="server">Server:</span>
+        <select
+          id="server-select"
+          title="Game server / data region — Albion Online Data Project" data-i18n-title="game_server_data_region_albion_online_data_p"
+          style="font-size: 0.85rem; padding: 3px 6px; background: #1f2937; color: #e5e7eb; border: 1px solid #4b5563; border-radius: 3px; margin-left: 4px"
+        >
+          <option value="west" data-i18n="server_americas_west">Americas (West)</option>
+          <option value="europe" data-i18n="server_europe">Europe</option>
+          <option value="east" data-i18n="server_asia_east">Asia (East)</option>
+        </select>
+      </label>
+      <label style="color: #e5e7eb; font-size: 0.9rem; margin-left: 10px">
+        <span data-i18n="language">Language:</span>
+        <select
+          id="lang-select"
+          title="UI language — item names + labels (prices are language-independent)"
+          style="font-size: 0.85rem; padding: 3px 6px; background: #1f2937; color: #e5e7eb; border: 1px solid #4b5563; border-radius: 3px; margin-left: 4px" data-i18n-title="ui_language_item_names_labels_prices_are_lan"
+        >
+          <option value="en">English</option>
+          <option value="es">Español</option>
+        </select>
+      </label>
+      <span id="loading-overlay" class="hidden" data-i18n="fetching_data">Fetching data...</span>
+      <div class="controls" style="display: flex; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+        <button id="scan-trigger" class="primary-btn" title="Fetch the latest market prices &amp; volumes for every catalogued item from the Albion Online Data Project, then recompute every table below." data-i18n-title="fetch_the_latest_market_prices_volumes_for_e" data-i18n="scan_market_now">Scan Market Now</button>
+        <button
+          id="monitor-toggle"
+          class="primary-btn hidden"
+          style="margin-left: 8px"
+          title="Watch the running game's traffic: every market you open updates prices and the readings go back to AODP. Read-only." data-i18n-title="watch_the_running_game_s_own_traffic_every_m"
+         data-i18n="start_monitor">▶ Start Monitor</button>
+        <label id="monitor-upload-label" class="hidden" style="margin-left: 8px; color: #e5e7eb; font-size: 0.85rem"
+          title="Contribute the prices you see back to the Albion Online Data Project, the same public database the Scan button reads from. Uncheck to keep captures local." data-i18n-title="contribute_the_prices_you_see_back_to_the_al">
+          <input type="checkbox" id="monitor-upload" checked />
+          <span data-i18n="share_with_aodp">Share with AODP</span>
+        </label>
+        <label id="monitor-autostart-label" class="hidden" style="margin-left: 8px; color: #e5e7eb; font-size: 0.85rem"
+          title="Open the capture automatically every time this app starts, so live prices are recorded without a click. Uncheck to start it by hand." data-i18n-title="open_the_capture_automatically_every_time_th">
+          <input type="checkbox" id="monitor-autostart" checked />
+          <span data-i18n="auto_start">Auto-start</span>
+        </label>
+        <label id="monitor-city-label" class="hidden" style="margin-left: 8px; color: #e5e7eb; font-size: 0.85rem"
+          title="The game only names your city when you cross a zone gate, so a capture started inside the market has nowhere to file prices. Set it here; a gate still overrides it." data-i18n-title="the_game_only_announces_which_city_you_are_i">
+          <span data-i18n="capture_city">Capture city</span>
+          <select
+            id="monitor-city"
+            style="font-size: 0.85rem; padding: 3px 6px; background: #1f2937; color: #e5e7eb; border: 1px solid #4b5563; border-radius: 3px; margin-left: 4px"
+          >
+            <option value="" data-i18n="auto_from_zone">Auto (from zone)</option>
+            <option value="7">Thetford</option>
+            <option value="1002">Lymhurst</option>
+            <option value="2004">Bridgewatch</option>
+            <option value="3005">Caerleon</option>
+            <option value="3008">Martlock</option>
+            <option value="4002">Fort Sterling</option>
+            <option value="5003">Brecilien</option>
+            <option value="3003">Black Market</option>
+          </select>
+        </label>
+        <button id="collapse-all-btn" style="margin-left: 8px" title="Collapse every table and every section group down to just its heading, so you can jump quickly between sections." data-i18n="collapse_all" data-i18n-title="collapse_every_table_and_every_section_group">
+          ⊟ Collapse All
+        </button>
+        <button id="expand-all-btn" style="margin-left: 4px" title="Expand every collapsed table back to its full rows." data-i18n-title="expand_every_collapsed_table_back_to_its_ful" data-i18n="expand_all">
+          ⊞ Expand All
+        </button>
+        <button
+          id="clear-overrides-btn"
+          style="margin-left: 8px; color: #c47a7a"
+          title="Remove every manual price/volume override you've typed into cells and every pinned buy/sell city, reverting those cells to scanned market data." data-i18n-title="remove_every_manual_price_volume_override_yo"
+         data-i18n="clear_overrides">
+          ✗ Clear Overrides
+        </button>
+        <button
+          id="export-overrides-btn"
+          style="margin-left: 8px; color: #7ab8c4"
+          title="Download your whole setup as a JSON file: price &amp; volume overrides, pinned buy/sell cities, every table's ⚙ Specs levels, mapped Roads of Avalon portals and the header toggles." data-i18n-title="download_all_your_manual_price_volume_overri"
+         data-i18n="export_overrides">
+          ↑ Export Settings
+        </button>
+        <button
+          id="import-overrides-btn"
+          style="margin-left: 8px; color: #7ac47a"
+          title="Load a previously exported setup. Prices &amp; volumes ask merge-or-replace, Roads portals always merge, ⚙ Specs and header toggles are replaced." data-i18n-title="load_price_volume_overrides_from_a_previousl"
+         data-i18n="import_overrides">
+          ↓ Import Settings
+        </button>
+        <input
+          type="file"
+          id="import-overrides-file"
+          accept=".json"
+          style="display: none"
+        />
+        <label
+          style="
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 12px;
+            cursor: pointer;
+            color: #e5e7eb;
+          "
+          title="Show every catalogued item, including rows with no market data or very low volume (otherwise those are hidden to cut noise)." data-i18n-title="show_every_catalogued_item_including_rows_wi"
+        >
+          <input type="checkbox" id="show-all-items" />
+          <span data-i18n="show_all">Show All</span>
+        </label>
+      </div>
+      <div id="monitor-status" style="margin-top: 10px; color: #9ca3af; font-size: 0.75rem; min-height: 1.1em"></div>
+      <div
+        class="sort-controls"
+        style="
+          margin-top: 1rem;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem 1rem;
+          align-items: center;
+          justify-content: center;
+          background: #26272b;
+          padding: 10px;
+          border-radius: 8px;
+        "
+      >
+        <span style="color: #9ca3af; font-size: 0.9rem" data-i18n="pricing_model">Pricing Model:</span>
+        <span style="display: flex; gap: 0.4rem; align-items: center">
+          <span style="color: #9ca3af; font-size: 0.9rem" data-i18n="buy_leg">Buy:</span>
+          <label style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer" title="Buy at the ask, filled immediately. No order is placed, so the purchase pays no 2.5% setup fee." data-i18n-title="buy_at_the_ask_filled_immediately_no_order_i">
+            <input
+              type="radio"
+              name="buyOrderType"
+              id="buy-instant"
+              value="instant"
+              checked
+            />
+            <span data-i18n="buy_instant">Instant</span>
+          </label>
+          <label style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer" title="Buy at the bid and wait to be filled. Places an order, so the purchase pays the 2.5% setup fee." data-i18n-title="buy_at_the_bid_and_wait_to_be_filled_places_">
+            <input
+              type="radio"
+              name="buyOrderType"
+              id="buy-market"
+              value="market"
+            />
+            <span data-i18n="buy_market_order">Market Order</span>
+          </label>
+        </span>
+        <span style="display: flex; gap: 0.4rem; align-items: center">
+          <span style="color: #9ca3af; font-size: 0.9rem" data-i18n="sell_leg">Sell:</span>
+          <label style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer" title="Sell into the standing bid, filled immediately. No order is placed, so only the sales tax comes off the sale." data-i18n-title="sell_into_the_standing_bid_filled_immediatel">
+            <input
+              type="radio"
+              name="sellOrderType"
+              id="sell-instant"
+              value="instant"
+              checked
+            />
+            <span data-i18n="sell_instant">Instant</span>
+          </label>
+          <label style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer" title="List at the ask and wait to be filled. Places an order, so the sale pays the 2.5% setup fee on top of the sales tax." data-i18n-title="list_at_the_ask_and_wait_to_be_filled_places">
+            <input
+              type="radio"
+              name="sellOrderType"
+              id="sell-market"
+              value="market"
+            />
+            <span data-i18n="sell_market_order">Market Order</span>
+          </label>
+        </span>
+        <label style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer">
+          <input type="checkbox" id="include-caerleon" />
+          <span data-i18n="include_caerleon">Include Caerleon &amp; Smuggler's Den</span>
+        </label>
+        <label style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer">
+          <input type="checkbox" id="use-focus" checked />
+          <span data-i18n="use_focus">Use Focus (Craft/Refine/Breed)</span>
+        </label>
+        <label
+          style="color: #e5e7eb; font-size: 0.9rem; cursor: pointer"
+          title="Premium accounts pay 4% market sales tax, non-Premium pay 8%. Toggling re-prices every profit table. The 2.5% setup fee is added on top for whichever legs the Pricing Model radios place as orders." data-i18n-title="premium_accounts_pay_4_market_sales_tax_non_"
+        >
+          <input type="checkbox" id="premium-account" checked />
+          <span data-i18n="premium_account">Premium Account (4% tax, else 8%)</span>
+        </label>
+        <label
+          style="color: #9ca3af; font-size: 0.9rem"
+          title="Applies one specialization level to every table at once, exactly as if you set it in each Specs panel. Reset puts back the levels you typed in the ⚙ Specs panels, and never clears them." data-i18n-title="applies_one_specialization_level_to_every_tab"
+        >
+          <span data-i18n="all_specs_label">All Specs:</span>
+          <select
+            id="global-spec-level"
+            style="background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px"
+          >
+            <option value="" data-i18n="spec_action_none">—</option>
+            <option value="0" data-i18n="spec_action_zero">Set all to 0</option>
+            <option value="100" data-i18n="spec_action_max">Set all to 100 (max)</option>
+            <option value="reset" data-i18n="spec_action_reset">Reset (restore my levels)</option>
+          </select>
+        </label>
+        <label style="color: #9ca3af; font-size: 0.9rem">
+          <span data-i18n="station_fee_label">Station Fee:</span>
+          <input
+            type="number"
+            id="station-fee"
+            min="0"
+            step="10"
+            value="400"
+            style="width:60px;background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px"
+          />
+          <span style="color:#6b7280;font-size:0.8rem" data-i18n="per_100_nutrition">/100 nutrition</span>
+        </label>
+        <label
+          style="color: #9ca3af; font-size: 0.9rem"
+          title="Stations rotate a daily 10% or 20% production bonus on up to two item groups. Pick the groups your station offers — each raises the material return rate only for its own craft, refine or butcher rows." data-i18n-title="daily_production_bonus_desc"
+        >
+          <span data-i18n="daily_production_bonus_label">Daily Production Bonus:</span>
+          <!-- Two (group, bonus) slots — the game rotates the daily bonus on up
+               to two item groups per station. Each group field is a text input
+               over the ONE shared <datalist> below (populated at boot from
+               DAILY_BONUS_GROUPS; Chromium filters its options by substring as
+               you type). The typed text is only the group's label: app.js
+               resolves it and keeps the group id on data-daily-bonus-group. -->
+          <input
+            id="daily-bonus-group-1"
+            list="daily-bonus-groups-list"
+            autocomplete="off"
+            data-i18n-ph="daily_bonus_group_placeholder"
+            style="background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px;width:110px"
+          /><button type="button" id="daily-bonus-clear-1" title="Clear this group" data-i18n-title="daily_bonus_clear_label" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:0.85rem;padding:0 2px;margin-left:2px">✕</button>
+          <select
+            id="daily-bonus-value-1"
+            style="background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px"
+          >
+            <option value="0.1">+10%</option>
+            <option value="0.2">+20%</option>
+          </select>
+          <input
+            id="daily-bonus-group-2"
+            list="daily-bonus-groups-list"
+            autocomplete="off"
+            data-i18n-ph="daily_bonus_group_placeholder"
+            style="background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px;width:110px"
+          /><button type="button" id="daily-bonus-clear-2" title="Clear this group" data-i18n-title="daily_bonus_clear_label" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:0.85rem;padding:0 2px;margin-left:2px">✕</button>
+          <select
+            id="daily-bonus-value-2"
+            style="background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px"
+          >
+            <option value="0.1">+10%</option>
+            <option value="0.2">+20%</option>
+          </select>
+          <datalist id="daily-bonus-groups-list"></datalist>
+        </label>
+        <!-- Display size. The widest tables run to 17 columns, so the scroll
+             wrapper alone is not enough — see js/app-zoom.js. -->
+        <label
+          style="color: #9ca3af; font-size: 0.9rem"
+          title="Scales the whole app. Ctrl+= / Ctrl+- / Ctrl+0 do the same." data-i18n-title="scales_the_whole_app_ctrl_shortcuts"
+        >
+          <span data-i18n="zoom_label">Zoom:</span>
+          <select
+            id="app-zoom"
+            style="background:#1f2937;color:#e5e7eb;border:1px solid #3e5e82;padding:2px 4px;font-size:0.85rem;border-radius:3px;margin-left:4px"
+          >
+            <option value="0.6">60%</option>
+            <option value="0.7">70%</option>
+            <option value="0.8">80%</option>
+            <option value="0.9">90%</option>
+            <option value="1" selected>100%</option>
+            <option value="1.1">110%</option>
+            <option value="1.25">125%</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <br />
+
+    <!-- ══ My Crafting List ══════════════════════════════════════════
+         Rows the user picked with the "+" column on any profit table. Each
+         entry is re-rendered by its SOURCE table's formatter, so its cells edit
+         exactly as they do there; quantity + totals + the aggregated shopping
+         list live in js/render-craft-list.js. -->
+    <script src="js/partials/group-craftlist.js"></script>
+
+    <!-- ══ Market & Trading ══════════════════════════════════════════ -->
+    <script src="js/partials/group-market.js"></script>
+
+    <!-- ══ Crafting & Refining ══════════════════════════════════════════ -->
+    <script src="js/partials/group-crafting.js"></script>
+
+    <!-- ══ Item Upgrades ══════════════════════════════════════════ -->
+    <script src="js/partials/group-upgrades.js"></script>
+
+    <!-- ══ Gathering & Production ══════════════════════════════════════════ -->
+    <script src="js/partials/group-production.js"></script>
+
+    <!-- ══ Faction Warfare ══════════════════════════════════════════ -->
+    <script src="js/partials/group-faction.js"></script>
+
+    <!-- ══ Roads of Avalon ══════════════════════════════════════════ -->
+    <script src="js/partials/group-roads.js"></script>
+
+    <!-- ══ Reference ══════════════════════════════════════════ -->
+    <script src="js/partials/group-reference.js"></script>
+
+    <!-- Data -->
+    <script src="js/i18n.js" defer></script>
+    <script src="js/catalog-ready.js" defer></script>
+    <script src="js/i18n-strings-en.js" defer></script>
+    <script src="js/i18n-strings-es-extra.js" defer></script>
+    <script src="js/i18n-strings-es-headers.js" defer></script>
+    <script src="js/i18n-strings-es-rows.js" defer></script>
+    <script src="js/i18n-strings-es-rolling-exchange.js" defer></script>
+    <script src="js/i18n-strings-es.js" defer></script>
+    <script src="js/journal-fill-speed.js" defer></script>
+    <script src="js/journal-fame-price.js" defer></script>
+    <script src="js/house-tier.js" defer></script>
+    <script src="js/laborer-happiness.js" defer></script>
+
+    <!-- Gear category files -->
+    <!-- What the Black Market will buy at all — reads the category map above,
+         must load before utils.js prices a Black Market sell leg. -->
+    <script src="js/roads-route.js" defer></script>
+    <script src="js/roads-hybrid-route.js" defer></script>
+    <script src="js/roads-route-describe.js" defer></script>
+    <script src="js/roads-graph-layout.js" defer></script>
+    <script src="js/roads-graph-view.js" defer></script>
+    <script src="js/render-roads-map.js" defer></script>
+    <script src="js/roads-zone-suggest.js" defer></script>
+    <script src="js/roads-labels.js" defer></script>
+    <!-- Portal timers parse ("2:30"/"30m"/"23h") and their cell editor run
+         before the panel that binds them. -->
+    <script src="js/roads-time-input.js" defer></script>
+    <script src="js/roads-portal-editor.js" defer></script>
+    <script src="js/render-roads.js" defer></script>
+    <!-- Team sync: one shared folder, one file per player. Loaded after
+         render-roads.js (it hangs off reloadRoadsPortals) and after the
+         captured-price store it shares cells through. -->
+    <script src="js/team-sync-payload.js" defer></script>
+    <script src="js/team-sync-loop.js" defer></script>
+    <script src="js/render-sync.js" defer></script>
+
+    <!-- Live capture → prices: location mapping + the order-to-price reduction
+         the Start Monitor button folds into the tables. -->
+    <script src="js/market-locations.js" defer></script>
+    <script src="js/market-price-store.js" defer></script>
+    <!-- Drops prices AODP invented from 24h history when the real prices other
+         cities hold contradict them (invented-price-guard.js). -->
+    <script src="js/invented-price-guard.js" defer></script>
+    <!-- Captures outlive the session: mirrored to a file under userData, folded
+         back onto scan data newest-wins (captured-prices-store.js). -->
+    <script src="js/captured-prices-store.js" defer></script>
+    <!-- Scanned prices outlive the session too, but as a file under userData —
+         a full scan is far past the localStorage quota (scan-price-store.js). -->
+    <script src="js/scan-price-store.js" defer></script>
+    <script src="js/render-monitor.js" defer></script>
+
+    <!-- Tradeable families no production catalog owns (trophies, furniture,
+         tomes, saltwater fish) — must load before utils.js builds the flip list -->
+
+    <!-- Focus cost data -->
+
+    <!-- The shared Silver/Focus + Best Focus standard every table renders from -->
+    <script src="js/focus-play.js" defer></script>
+
+    <!-- Focus specialization: Destiny Board node data + the per-table levels
+         that turn it into a focus cost multiplier (must load before utils.js) -->
+    <script src="js/focus-spec.js" defer></script>
+    <script src="js/focus-spec-explain.js" defer></script>
+
+    <!-- Consumable craft yield (amountcrafted) data -->
+    <script src="js/consumable-output.js" defer></script>
+
+    <!-- Existing utility files (unchanged) -->
+    <script src="js/calculations.js" defer></script>
+    <script src="js/calculations-margins.js" defer></script>
+    <script src="js/travel-cost.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/recipe-resolver.js" defer></script>
+    <script src="js/vendor/lightweight-charts.standalone.production.js" defer></script>
+    <script src="js/indicators.js" defer></script>
+
+    <!-- App logic -->
+    <script src="js/global-discount.js" defer></script>
+    <!-- Which recipe materials the return rate gives back — asked by the
+         crafting list, the mounts table and faction spending alike. -->
+    <script src="js/rrr-eligible.js" defer></script>
+    <script src="js/price-book-fallback.js" defer></script>
+    <script src="js/utils.js" defer></script>
+    <script src="js/utils-item-ids.js" defer></script>
+    <script src="js/utils-overrides.js" defer></script>
+    <script src="js/utils-focus-fees.js" defer></script>
+    <!-- Which of an entry's two order dates belongs beside a price cell. Reads
+         the Pricing Model the same way getBuyPrice/getSellPrice do, so it must
+         load after utils.js and before any renderer that badges a price. -->
+    <script src="js/price-freshness.js" defer></script>
+    <!-- Which standing orders are the player's own: a row must not quote the
+         player back to themselves, and a trade of theirs must invalidate the
+         book it changed. Fed over IPC by the capture. -->
+    <script src="js/own-orders-view.js" defer></script>
+    <!-- The per-table City pick. Loaded before every row builder that reads it
+         (crafting, refining/transports, craft planner), which is what turns the
+         picker from a row filter into a re-price of the whole table. -->
+    <script src="js/table-sell-city.js" defer></script>
+    <script src="js/render-gating.js" defer></script>
+    <!-- The Route column's click-to-override city names. Loaded before every
+         table that builds a route cell with it. -->
+    <script src="js/route-cell.js" defer></script>
+    <!-- Is boot still filling the tables? Read by the craft list, which paints
+         before any price map exists, so it loads ahead of it. -->
+    <script src="js/boot-state.js" defer></script>
+    <script src="js/render-schedule.js" defer></script>
+    <!-- The asynchronous re-render: a price edit or a header toggle draws the
+         tables in phases instead of freezing the window. render-async.js reads
+         RERENDER_PHASES out of render-schedule.js above, so it follows it. -->
+    <script src="js/scroll-anchor.js" defer></script>
+    <!-- The edited cell's own spinner: the pill is in the corner, the user is
+         looking at the row they typed into. Re-applied after every phase,
+         because the edited table is redrawn first. -->
+    <script src="js/pending-edit-mark.js" defer></script>
+    <script src="js/render-crafting-chunked.js" defer></script>
+    <script src="js/recalc-cell-mark.js" defer></script>
+    <!-- The loading row a table wears while boot computes it. There is no
+         splash any more, so this IS the report that the app is working. -->
+    <script src="js/table-loading-mark.js" defer></script>
+    <script src="js/render-async.js" defer></script>
+    <script src="js/sorting-values-tables.js" defer></script>
+    <script src="js/table-search-reveal.js" defer></script>
+    <script src="js/sorting-row-key.js" defer></script>
+    <script src="js/sorting.js" defer></script>
+    <!-- My Crafting List: store + row extractors + the "+" column. Loaded
+         before the render files because every row template calls addTd(). -->
+    <script src="js/craft-list-qty-expr.js" defer></script>
+    <script src="js/craft-list-store.js" defer></script>
+    <script src="js/craft-list-focus-budget.js" defer></script>
+    <script src="js/craft-list-extractors.js" defer></script>
+    <script src="js/craft-list-extractors-transport.js" defer></script>
+    <script src="js/craft-list-extractors-faction.js" defer></script>
+    <script src="js/craft-list-extractors-farming.js" defer></script>
+    <script src="js/craft-list-materials.js" defer></script>
+    <script src="js/craft-list-sort.js" defer></script>
+    <script src="js/craft-list-per10k.js" defer></script>
+    <script src="js/craft-list-per-day.js" defer></script>
+    <script src="js/craft-list-focus-loss-warning.js" defer></script>
+    <script src="js/craft-list-qty-focus.js" defer></script>
+    <!-- Shared "self-gathered" profit twin + the Pure Profit cell builders
+         (extracted from app.js): both need calculations.js's live tax getter
+         and getProfitClass, and app.js's forwarders need __pureProfitCell —
+         so they load after calculations.js and before app.js. -->
+    <script src="js/self-found-profit.js" defer></script>
+    <script src="js/pure-profit-cell.js" defer></script>
+    <script src="js/table-add-button.js" defer></script>
+    <script src="js/render-chain-breakdown.js" defer></script>
+    <script src="js/render-consumable-alt-routes.js" defer></script>
+    <script src="js/render-crafting.js" defer></script>
+    <script src="js/render-crafting-no-data-row.js" defer></script>
+    <script src="js/flip-route.js" defer></script>
+    <script src="js/quality-flat-views.js" defer></script>
+    <script src="js/flip-route-quality.js" defer></script>
+    <script src="js/flip-quality-breakdown.js" defer></script>
+    <script src="js/bm-quality-ladder.js" defer></script>
+    <script src="js/flip-enchant-variants.js" defer></script>
+    <script src="js/flip-auto-reveal.js" defer></script>
+    <script src="js/render-flipping.js" defer></script>
+    <script src="js/render-skins-trading.js" defer></script>
+    <script src="js/render-transport.js" defer></script>
+    <script src="js/chain-recipes.js" defer></script>
+    <script src="js/pasture-econ.js" defer></script>
+    <script src="js/chain-pricing.js" defer></script>
+    <script src="js/refining-chain-pricing.js" defer></script>
+    <script src="js/refining-chain-focus.js" defer></script>
+    <script src="js/refining-transmute-substitute.js" defer></script>
+    <script src="js/refining-route.js" defer></script>
+    <script src="js/craft-planner-enchant-route.js" defer></script>
+    <script src="js/craft-planner-reroll-ev.js" defer></script>
+    <script src="js/craft-planner-quality.js" defer></script>
+    <script src="js/craft-planner-pricing.js" defer></script>
+    <script src="js/craft-planner-dedupe.js" defer></script>
+    <script src="js/render-craft-planner-paths.js" defer></script>
+    <!-- Per-item planner rows + the price ids they read, so a captured price
+         recomputes only the rows that read it (craft-planner-row-cache.js). -->
+    <script src="js/craft-planner-row-cache.js" defer></script>
+    <script src="js/render-craft-planner.js" defer></script>
+    <script src="js/craft-planner-variant-prices.js" defer></script>
+    <script src="js/laborers-pricing.js" defer></script>
+    <script src="js/render-laborers.js" defer></script>
+    <script src="js/laborer-journal-value.js" defer></script>
+    <script src="js/laborer-craft-fill.js" defer></script>
+    <script src="js/laborer-self-fill.js" defer></script>
+    <script src="js/laborer-journal-play.js" defer></script>
+    <script src="js/journal-laborer-payload.js" defer></script>
+    <script src="js/consumable-enchant-variants.js" defer></script>
+    <script src="js/consumable-city-pick.js" defer></script>
+    <script src="js/render-consumables.js" defer></script>
+    <script src="js/render-consumables-row.js" defer></script>
+    <script src="js/consumable-pasture-row.js" defer></script>
+    <script src="js/consumable-flip-row.js" defer></script>
+    <script src="js/render-consumable-chain-row.js" defer></script>
+    <script src="js/render-consumable-no-data-row.js" defer></script>
+    <script src="js/faction-cape-craft.js" defer></script>
+    <script src="js/mounts-city-pick.js" defer></script>
+    <script src="js/pinned-feed.js" defer></script>
+    <script src="js/render-mounts.js" defer></script>
+    <script src="js/breeding-finish.js" defer></script>
+    <script src="js/render-mounts-breeding-row.js" defer></script>
+    <script src="js/breeding-profit-per-day.js" defer></script>
+    <script src="js/render-mounts-craft-row.js" defer></script>
+    <script src="js/mp-bonus.js" defer></script>
+    <script src="js/faction-focus-value.js" defer></script>
+    <script src="js/render-favor-spending.js" defer></script>
+    <script src="js/render-faction-spending.js" defer></script>
+    <script src="js/render-fp-calculator.js" defer></script>
+    <script src="js/farming-row-econ.js" defer></script>
+    <script src="js/render-farming.js" defer></script>
+    <script src="js/render-journals.js" defer></script>
+    <script src="js/buildings-upgrade-path.js" defer></script>
+    <script src="js/buildings-furnishing.js" defer></script>
+    <script src="js/render-buildings.js" defer></script>
+    <script src="js/render-gathering.js" defer></script>
+    <script src="js/render-city-bonuses.js" defer></script>
+    <script src="js/render-black-zone-bonuses.js" defer></script>
+    <script src="js/render-brecilien-fees.js" defer></script>
+    <script src="js/render-fees-calculator.js" defer></script>
+    <script src="js/render-volume.js" defer></script>
+    <script src="js/render-gold-chart.js" defer></script>
+    <script src="js/render-global-discount.js" defer></script>
+    <script src="js/table-filters.js" defer></script>
+    <script src="js/table-overrides.js" defer></script>
+    <script src="js/table-station-filter.js" defer></script>
+    <script src="js/table-row-match.js" defer></script>
+    <script src="js/table-search-reveal-repaint.js" defer></script>
+    <script src="js/table-search.js" defer></script>
+    <script src="js/table-search-fetch.js" defer></script>
+    <script src="js/fragment-transmute-sourcing.js" defer></script>
+    <script src="js/rolling-strategy.js" defer></script>
+    <script src="js/rolling-exchange.js" defer></script>
+    <script src="js/render-rolling-exchange.js" defer></script>
+    <script src="js/render-rolling.js" defer></script>
+    <script src="js/render-enchanting.js" defer></script>
+    <script src="js/render-transmute.js" defer></script>
+    <script src="js/joined-summary-sources.js" defer></script>
+    <script src="js/joined-summary-detail.js" defer></script>
+    <script src="js/joined-summary-jump.js" defer></script>
+    <script src="js/render-joined-summary.js" defer></script>
+    <!-- The third board: everything that sells at the Black Market, with the
+         age of the bid it leans on. Borrows every cell from the two above. -->
+    <script src="js/render-bm-board.js" defer></script>
+    <!-- The id set that board's own scan button re-reads. Before scan-handlers.js,
+         which registers the button. -->
+    <script src="js/bm-board-scan.js" defer></script>
+    <!-- Loads after every source renderer: it renders list rows through their
+         formatters (tableState) and can force a source table to compute. -->
+    <script src="js/render-craft-list-header.js" defer></script>
+    <script src="js/render-craft-list-footer.js" defer></script>
+    <script src="js/render-craft-list-source.js" defer></script>
+    <script src="js/render-craft-list-cells.js" defer></script>
+    <script src="js/render-craft-list.js" defer></script>
+    <script src="js/render-craft-list-events.js" defer></script>
+    <script src="js/craft-list-filter.js" defer></script>
+    <script src="js/scan-handlers.js" defer></script>
+    <script src="js/price-edit-dropdown.js" defer></script>
+    <script src="js/price-edit-position.js" defer></script>
+    <script src="js/spec-settings-panel.js" defer></script>
+    <script src="js/section-groups.js" defer></script>
+    <!-- Zoom + compact density: the only way the 15-17 column tables fit. -->
+    <script src="js/app-zoom.js" defer></script>
+    <script src="js/settings-transfer.js" defer></script>
+    <script src="js/settings-transfer-ui.js" defer></script>
+    <script src="js/catalog-loader.js" defer></script>
+    <script src="js/app-cells.js" defer></script>
+    <script src="js/app-row-overrides.js" defer></script>
+    <script src="js/render-pipeline.js" defer></script>
+    <script src="js/collapsible-sections.js" defer></script>
+    <script src="js/app-catalog-merge.js" defer></script>
+    <script src="js/app-toolbar.js" defer></script>
+    <script src="js/price-editor.js" defer></script>
+    <script src="js/scan-extra-ids.js" defer></script>
+    <script src="js/app-scan-controls.js" defer></script>
+    <script src="js/app.js" defer></script>
+    <script src="js/tooltips.js" defer></script>
+  </body>
+</html>

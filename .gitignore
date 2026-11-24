@@ -1,0 +1,13 @@
+# Electron / build
+node_modules/
+dist/
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+
+# Secrets / build output / logs
+.env
+.env.*
+dist*/
+*.log

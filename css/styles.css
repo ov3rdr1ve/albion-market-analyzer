@@ -1,0 +1,551 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #1a1b1e;
+  color: #e5e7eb;
+  margin: 1rem;
+  line-height: 1.4;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #f3f4f6;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #374151;
+  color: #f3f4f6;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: #374151;
+  color: #f3f4f6;
+  border: 1px solid #4b5563;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #4b5563;
+}
+
+/* Inside horizontal control bars the global button bottom-margin throws off
+   vertical centring (align-items:center shifts the button box up by half the
+   margin). Zero it so buttons align with adjacent selects/checkboxes. Section
+   headings are the same kind of bar: their Scan button sat 8px — half the
+   margin — above the filter box and tier/enchant pickers beside it. */
+.controls button,
+h2 button { margin-bottom: 0; }
+
+/* Live-capture state of the Start/Stop Monitor button. The tap keeps running
+   while the user works in other tables, so the control carries a colour, not
+   only a label: green = the capture is open. */
+button.monitor-live {
+  background-color: #15803d;
+  border-color: #22c55e;
+  color: #f0fdf4;
+}
+button.monitor-live:hover {
+  background-color: #166534;
+}
+
+/* "Scanning..." feedback for the volume refresh button (and reusable for any
+   future async-button states). The pulsing background makes the active state
+   unmissable even when the fetch finishes in well under a second. */
+@keyframes scanning-pulse {
+  0%   { background-color: #3e5e82; }
+  50%  { background-color: #6e90c8; }
+  100% { background-color: #3e5e82; }
+}
+button.scanning {
+  animation: scanning-pulse 0.9s ease-in-out infinite;
+  color: #f3f4f6 !important;
+  border-color: #6e90c8 !important;
+}
+button.scanning::after {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  margin-left: 6px;
+  border: 2px solid #f3f4f6;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: -1px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* The ring every "working on it" mark in the app turns: the loading row a table
+   wears while boot computes it (.row-computing below), the in-cell marks of
+   js/recalc-cell-mark.js and js/pending-edit-mark.js, and the per-table search
+   fetch. It used to be inlined in index.html's <head> alongside the boot
+   overlay; the overlay is gone (there is no splash any more) and the keyframe
+   moved here, where the rules that use it live. Same name, so nothing renamed. */
+@keyframes app-loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+p {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  background-color: #1c2230;
+}
+
+/* Wide data tables get a scroll wrapper so they don't push the page wider
+   than the viewport. Each .data-table is wrapped in <div class="table-wrap">
+   at load time (see app.js). */
+.table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+.table-wrap > .data-table {
+  margin-bottom: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+/* Content in a full-row cell — a placeholder row, "Computing…", an empty state,
+   an expanded detail sub-row — must not feed the table's intrinsic width. Every
+   data table above is `width: max-content`, so a sentence in a colspan cell
+   sizes the REAL columns: the craft list's "Computing… this row fills when
+   Crafting (w/ Focus) is done." stepped its group table a few hundred px wider
+   for the length of every pass and back again, which is the jumping this class
+   exists to stop.
+
+   width: 0 takes the content out of intrinsic sizing; min-width: 100% is a
+   percentage, which intrinsic sizing ignores, so at layout time it still fills
+   the used cell width. */
+.row-fluid {
+  display: block;
+  width: 0;
+  min-width: 100%;
+}
+/* A one-line note in such a cell: ellipsis rather than a second row of text,
+   since the cell is as wide as the table and nothing else is in it. */
+.row-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The spinning ring a table wears while boot (or a queued re-render) is filling
+   it — js/table-loading-mark.js.
+
+   This is the app's whole loading report now. The splash window and the
+   full-screen #app-loader overlay are gone, so the work says where it is
+   happening: in the table being computed, not over the top of everything.
+
+   The ring is the entire message: no word beside it. A table with a header and
+   nothing under it, turning a spinner, already says "filling this" — and the
+   label was one more string to translate, to re-measure, and to make the row
+   taller than the animation needs.
+
+   Ring geometry is .search-fetch-status::after's, so
+   every "something is working on this" mark in the app is one shape — only
+   bigger, because this one stands alone instead of trailing a number. */
+.row-computing {
+  display: block;
+  /* The row is empty, so the padding is what gives it a height to sit in. */
+  padding: 10px 2px;
+  line-height: 0;
+}
+.row-computing::after {
+  content: "";
+  display: inline-block;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #4b5563;
+  border-top-color: #93c5fd;
+  animation: app-loader-spin 0.9s linear infinite;
+  pointer-events: none;
+}
+/* Compact is the default density, and the mark also stands in for a single row
+   in My Crafting List (js/render-craft-list.js) — at the roomy size that row is
+   half again as tall as the ones around it, so the group table steps down and
+   back up as each row resolves. */
+body.compact .row-computing {
+  padding: 4px 2px;
+}
+body.compact .row-computing::after {
+  width: 11px;
+  height: 11px;
+}
+
+/* Per-table free-text filter box. The volume table shipped this as inline
+   styles; this class mirrors them so every table's search box (added by
+   js/table-search.js) looks identical. */
+.table-search {
+  font-size: 0.8rem;
+  font-weight: normal;
+  padding: 4px 10px;
+  min-width: 200px;
+  background: #1f2937;
+  border: 1px solid #3e5e82;
+  border-radius: 4px;
+  color: #e5e7eb;
+}
+.table-search::placeholder {
+  color: #6b7280;
+}
+
+/* Table headings are inline flex rows (Scan button, ⚙ Specs, search box). With
+   the full in-game picker set — Category, Subcategory, Tier, Ench., City,
+   Station — they no longer fit one line on a narrow window, so let them wrap
+   instead of pushing the trailing controls out of view. */
+h2:has(> .table-search) {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+/* Long subcategory labels ("Resources · Demolition Hammer") must not stretch
+   the row; the full text still shows in the open dropdown. */
+.table-filter-select {
+  max-width: 170px;
+}
+
+/* Per-table "Clear overrides" action (js/table-overrides.js). Deliberately
+   quieter than the Scan button next to it — it destroys hand-typed data, so it
+   should read as a utility, not an invitation. It warms to red on hover. */
+/* Two reset buttons sit at the end of a table header and must not be mistaken
+   for each other: "Reset filters" only changes the view (neutral hover), while
+   "Clear overrides" deletes hand-typed prices (red hover, like every other
+   destructive control). */
+.clear-overrides-btn,
+.clear-filters-btn {
+  font-size: 0.8rem;
+  font-weight: normal;
+  padding: 3px 10px;
+  background: #1f2937;
+  border: 1px solid #4b5563;
+  border-radius: 3px;
+  color: #9ca3af;
+  cursor: pointer;
+  white-space: nowrap; /* narrow headers must not split the label over two lines */
+}
+.clear-overrides-btn:hover {
+  border-color: #b91c1c;
+  color: #fca5a5;
+}
+.clear-filters-btn:hover {
+  border-color: #6b7280;
+  color: #e5e7eb;
+}
+
+th,
+td {
+  border: 1px solid #374151;
+  padding: 0.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.3rem 0.4rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+/* The per-class width caps that make those cells wrap and stop growing, and the
+   compact density that tightens them, live in css/table-density.css — loaded
+   after this file so its `body.compact` restatements can beat the per-table
+   `#id` rules further down here. */
+
+/* ── The Flipping row's per-quality ladder (js/flip-quality-breakdown.js) ──
+   One line per routable quality under each price cell. Buy Cost and Sell
+   Revenue list the SAME qualities in the SAME order, so line N of one cell
+   pairs with line N of the other — which is why a line must never wrap: a
+   wrapped city would push the two cells out of step. It truncates instead, and
+   the full trade is in the line's hover text. */
+.qual-breakdown {
+  margin-top: 3px;
+  padding-top: 2px;
+  border-top: 1px solid #35506066;
+}
+.qbrk-line {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: #8a94a6;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* Only the city gives way when the column is tight. The quality, the price and
+   the age are what the line is FOR — clipping the age would leave a number the
+   reader cannot judge, which is the exact failure the age badge exists to
+   prevent. */
+.qbrk-q, .qbrk-price, .qbrk-age { flex: 0 0 auto; }
+.qbrk-city {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qbrk-line.qbrk-take { color: #c8d4e0; }
+.qbrk-line.qbrk-undated { opacity: 0.6; }
+/* A quality with a price on one side only: real, readable, and not a trade.
+   Italic rather than faded — it is often the ONLY price the row has (a Black
+   Market bid nobody is asking against), so dimming it would hide the very
+   number the line exists to show. */
+.qbrk-line.qbrk-unroutable { font-style: italic; color: #7f8fa0; }
+/* A number no route may use: struck through, but still readable and still
+   there — the app flags a vanished order, it never deletes it. */
+.qbrk-line.qbrk-gone .qbrk-price,
+.qbrk-line.qbrk-yours .qbrk-price { text-decoration: line-through; opacity: 0.75; }
+.qbrk-q { color: #7ab8c4; }
+.qbrk-city { color: #7a8496; }
+/* The ladder adds "Q2 609,999 Caerleon 3h" to a cell the app-wide cap sizes for
+   a bare number, so Flipping's price cells get their own sizing — a class rule,
+   as every cap in this sheet is (tests/table-column-caps).
+
+   min-width, not just a bigger max: max-width on a td is advisory under auto
+   table layout, so on a narrow window the column collapsed and every ladder
+   line ellipsised its city away. .table-wrap scrolls (see the top of this
+   file), which is the app's answer for a table that cannot fit — a truncated
+   city is not. */
+:is(#flipping-table, .cl-inner[data-cl-group="flipping-table"]) td.cell-num { min-width: 150px; max-width: 175px; }
+
+/* The identity columns stay put while the rest of a still-too-wide table
+   scrolls under them — without this you scroll right and lose track of which
+   row you are reading. Only the two leading columns pin; a third would start
+   eating the viewport it is meant to save.
+
+   The background must be OPAQUE and stated, not inherited: rows carry no
+   background of their own (the <table> does), so `inherit` would leave the data
+   columns visibly sliding under the pinned ones. Rows that DO paint themselves
+   (cl-group / cl-missing / cl-totals, the breed detail row) set it on their own
+   td further down this file and win on source order. border-collapse drops the
+   border on a sticky edge, so a box-shadow stands in for it. */
+.data-table td.cell-add,
+.data-table th.cell-add {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.data-table td.cell-item,
+.data-table th.cell-item {
+  position: sticky;
+  left: 30px;
+  z-index: 1;
+  box-shadow: 1px 0 0 #374151;
+}
+.data-table td.cell-add,
+.data-table td.cell-item { background: #1c2230; }
+/* The header keeps its own grey — this block outranks the plain `th` rule. */
+.data-table th.cell-add,
+.data-table th.cell-item { background: #374151; }
+body.compact .data-table td.cell-item,
+body.compact .data-table th.cell-item { left: 22px; }
+/* A row with no "+" gutter (the reference tables, and the Materials to Buy
+   sub-table) must not leave cell-item floating 30px in from the edge. The
+   compact restatement is NOT redundant: the `body.compact … left: 22px` rule
+   above scores (0,3,2) against this one's (0,3,1), so without it compact wins
+   and the sticky, opaque Material column paints over the left 22px of the
+   next column — "Martlock" read as "rtlock". */
+.data-table tr:not(:has(> .cell-add)) > .cell-item,
+body.compact .data-table tr:not(:has(> .cell-add)) > .cell-item {
+  left: 0;
+}
+/* Inside a My Crafting List group the source table's "+" column becomes the ✕
+   remove button and TWO list columns (Qty, Total Profit) sit between it and the
+   item name (js/render-craft-list.js). The 30px/22px offset above assumes the
+   item is the very next column, so pinning it here would park it on top of Qty.
+   The ✕ gutter still pins; the item name scrolls with its row. */
+.cl-inner td.cell-item,
+.cl-inner th.cell-item {
+  position: static;
+  box-shadow: none;
+}
+
+/* Faction-spending table: breed-inputs sub-row appears beneath each Baby row
+   when the user clicks the ▾ toggle on the breed cell. Hidden by default. */
+.breed-detail-row .breed-detail-cell {
+  background: #181c25;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid #2a3142;
+  border-bottom: 1px solid #2a3142;
+}
+/* auto-fit, and a floor that yields to the cell (`min(200px, 100%)`), because
+   the fixed four-track version demanded 860px of tracks plus 72px of gaps from
+   a colspan cell — and #faction-spending-table is `width: max-content`, so
+   opening one ▾ row shoved the whole table ~960px wider and closing it snapped
+   it back. Sections stack instead. */
+.breed-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 0.75rem 1.5rem;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.breed-detail-section {
+  min-width: 0;
+}
+.breed-detail-label {
+  font-weight: 600;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+.breed-toggle:hover {
+  background: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+/* Mounts table is the widest table (13 columns including breeding rows).
+   Tighten further so it fits common laptop widths (~1366-1440px) without
+   horizontal scroll. Header text is shortened in index.html. */
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) th,
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td {
+  padding: 0.25rem 0.3rem;
+  font-size: 0.78rem;
+}
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) th {
+  white-space: normal;
+}
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-item { max-width: 130px; }
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-route { max-width: 140px; }
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-mats { max-width: 260px; }
+:is(#mounts-table, .cl-inner[data-cl-group="mounts-table"]) td.cell-focus-mats { max-width: 200px; }
+
+/* Laborers table is 12 columns wide (it was 15 until Tier folded into the
+   Laborer name, Margin % folded into Profit / Cycle, and Best Journal + Fill
+   Speed merged into Best Journal Play — all three were width spent on numbers
+   derivable from their neighbours). Tighten padding/font, let the long header
+   labels wrap, and cap the Laborer and Route columns — the Route cell
+   ("Buy: City → Run/Sell: City" + travel badge) otherwise stays on one line and
+   pushes the table past common laptop widths (~1366-1440px). */
+:is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) th,
+:is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) td {
+  padding: 0.25rem 0.3rem;
+  font-size: 0.78rem;
+}
+:is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) th { white-space: normal; }
+:is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) td.cell-item { max-width: 120px; }
+:is(#laborers-table, .cl-inner[data-cl-group="laborers-table"]) td.cell-route { max-width: 140px; }
+
+/* Transport table grew an 11th column (Silver/Focus) and the Required
+   Materials cell now hosts the recursive refining-chain breakdown when
+   chains beat market. Tighten padding/font and cap each column so the
+   table fits common laptop widths without forcing the wrapper into
+   constant horizontal scroll. */
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) th,
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td {
+  padding: 0.2rem 0.25rem;
+  font-size: 0.76rem;
+}
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) th { white-space: normal; }
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-item { max-width: 130px; }
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-route { max-width: 130px; }
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-mats { max-width: 230px; }
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-num { max-width: 110px; overflow-wrap: anywhere; }
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-focus-mats { max-width: 160px; }
+
+/* Refining-chain breakdown nested inside the Required Materials cell. The
+   inset itself now comes from the global .chain-indent rule; this table only
+   shrinks the type so deep chains (T4→T8 = 4 levels) don't bloat the row. */
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-mats .chain-indent {
+  font-size: 0.72rem;
+}
+:is(#transport-table, .cl-inner[data-cl-group="transport-table"]) td.cell-mats small {
+  white-space: normal;
+}
+
+/* Faction Spending table — 11 columns; cells with a sub-note (Item, Sell Price)
+   take real estate. Tighten padding/font so it fits common viewports without
+   horizontal scroll. Header text is shortened in index.html.
+   Every cell here is short, so one blanket cap beats nine per-column ones — the
+   per-column set was written for a 9-column table and the two columns added
+   since (S/FP (Bred), Profit / 10k Focus) shifted every rule past its target. */
+:is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) th,
+:is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) td {
+  padding: 0.2rem 0.3rem;
+  font-size: 0.78rem;
+  white-space: normal;
+  max-width: 120px;
+  overflow-wrap: anywhere;
+}
+:is(#faction-spending-table, .cl-inner[data-cl-group="faction-spending-table"]) td.cell-item { max-width: 170px; }
+
+/* Skins Trading table — 14 columns (7 data + a 7-city price board). Each board
+   cell and the Best Buy/Best Sell cells render a silver value PLUS an age·volume
+   badge; on one nowrap line that pushes the table ~2400px wide, far past any
+   viewport. Tighten padding/font, let headers and value cells wrap (the badge
+   drops below the number), and cap every column so the board fits common laptop
+   widths (~1366-1440px) without constant horizontal scroll. */
+:is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) th,
+:is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td {
+  padding: 0.2rem 0.25rem;
+  font-size: 0.74rem;
+}
+:is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) th { white-space: normal; }
+/* Skin name — "Firework Launcher: Chromacannon" wraps to two lines */
+:is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td.cell-item { max-width: 140px; }
+/* Best Buy / Best Sell — number on top, "(City) age · vol" badge wraps below */
+:is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td.cell-num { max-width: 115px; }
+/* The per-city board columns (Caer … Smug): number on top, badge below. Tagged
+   by the renderer, so adding a city can't leave one column uncapped the way the
+   old `nth-child(n+8)` did — it started at Lymhurst and missed Caerleon. */
+:is(#skins-trading-table, .cl-inner[data-cl-group="skins-trading-table"]) td.cell-board { max-width: 84px; }
+
+/* Building Costs — the Required Materials cell is one line per construction
+   material (a hideout lists five stone-block tiers), and the Laborers/Furniture
+   cells stack a count over a price badge. Caps keep the 8 columns inside a
+   laptop width; the class-based selectors mean inserting a column can't shift a
+   cap onto its neighbour. */
+:is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td.cell-item { max-width: 210px; }
+:is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td.cell-mats { max-width: 340px; }
+:is(#buildings-table, .cl-inner[data-cl-group="buildings-table"]) td.cell-note { max-width: 150px; }
+
+th {
+  background-color: #374151;
+  font-weight: bold;
+  color: #f3f4f6;
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable:hover {
+  background-color: #4b5563;
+}
+
+th.sortable::after {
+  content: " \21D5"; /* Up/down arrow indicating sortable */
+  opacity: 0.3;
+  margin-left: 4px;
+}
+
+th.sortable.sort-asc::after {
+  content: " \2191"; /* Up arrow */
+  opacity: 1;
+}
+
+th.sortable.sort-desc::after {
+  content: " \2193"; /* Down arrow */
+  opacity: 1;
+}
+

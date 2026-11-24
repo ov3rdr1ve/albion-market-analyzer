@@ -1,0 +1,372 @@
+/* ── Fees Calculator ───────────────────────────────────────────────────── */
+.fees-calculator {
+  background: #26272b;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: grid;
+  gap: 10px;
+}
+.fees-calculator .fc-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.fees-calculator .fc-field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+.fees-calculator .fc-field input[type="number"],
+.fees-calculator .fc-field input[type="text"] {
+  width: 140px;
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #3e5e82;
+  padding: 5px 7px;
+  font-size: 0.95rem;
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.fees-calculator .fc-field-wide input[type="text"] {
+  width: 220px;
+}
+.fees-calculator .fc-mode {
+  display: inline-flex;
+  gap: 14px;
+  font-size: 0.82rem;
+  color: #e5e7eb;
+  align-items: center;
+  padding-bottom: 5px;
+}
+.fees-calculator .fc-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.fees-calculator .fc-results {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #374151;
+}
+.fees-calculator .fc-result {
+  background: #1f2937;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
+.fees-calculator .fc-result-net {
+  background: #1c2939;
+  border: 1px solid #3e5e82;
+}
+.fees-calculator .fc-result-label {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.fees-calculator .fc-result-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.fees-calculator .fc-result-detail {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.fees-calculator .fc-inline-value {
+  font-weight: 600;
+  color: #e5e7eb;
+}
+.fees-calculator .fc-positive { color: #4ade80; }
+.fees-calculator .fc-negative { color: #f87171; }
+@media (max-width: 720px) {
+  .fees-calculator .fc-results {
+    grid-template-columns: 1fr;
+  }
+  .fees-calculator .fc-field input[type="number"],
+  .fees-calculator .fc-field-wide input[type="text"] {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ── Calculator actions (Save / Clear Form / Clear All) ──────────────── */
+.fees-calculator .fc-actions {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: auto;
+  padding-bottom: 0;
+}
+.fees-calculator .fc-action-btn {
+  background: #374151;
+  color: #f3f4f6;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin: 0;
+  line-height: 1.2;
+}
+.fees-calculator .fc-action-btn:hover { background: #4b5563; }
+.fees-calculator .fc-action-btn.fc-save {
+  background: #2f5e3e;
+  border-color: #3e7e52;
+  color: #e8f5ed;
+}
+.fees-calculator .fc-action-btn.fc-save:hover { background: #3e7e52; }
+.fees-calculator .fc-action-btn.fc-danger {
+  background: #5e2f2f;
+  border-color: #7e3e3e;
+  color: #f5e8e8;
+}
+.fees-calculator .fc-action-btn.fc-danger:hover { background: #7e3e3e; }
+
+/* ── Saved Trades table ──────────────────────────────────────────────── */
+.fees-calculator .fc-saved-wrap {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #374151;
+}
+.fees-calculator .fc-saved-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.fees-calculator .fc-saved-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0;
+}
+.fees-calculator .fc-saved-count {
+  color: #9ca3af;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+.fees-calculator .fc-saved-header .fc-action-btn { margin-left: auto; }
+.fees-calculator .fc-saved-table-wrap {
+  overflow-x: auto;
+}
+.fees-calculator .fc-saved-table {
+  width: 100%;
+  background: #1f2937;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 0;
+}
+.fees-calculator .fc-saved-table th,
+.fees-calculator .fc-saved-table td {
+  padding: 5px 8px;
+  border: 1px solid #374151;
+  white-space: nowrap;
+}
+.fees-calculator .fc-saved-table th {
+  background: #26272b;
+  color: #d1d5db;
+  font-weight: 600;
+  text-align: left;
+  font-size: 0.78rem;
+}
+.fees-calculator .fc-saved-table td.fc-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.fees-calculator .fc-saved-table td.fc-mode-cell {
+  text-align: center;
+  color: #9ca3af;
+  font-family: ui-monospace, monospace;
+}
+.fees-calculator .fc-saved-table .fc-cell-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.fees-calculator .fc-saved-table .fc-cell-city { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.fees-calculator .fc-muted { color: #6b7280; font-style: italic; }
+.fees-calculator .fc-saved-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 14px;
+}
+.fees-calculator .fc-totals-row td {
+  background: #26272b;
+  font-weight: 600;
+  color: #f3f4f6;
+  border-top: 2px solid #4b5563;
+}
+.fees-calculator .fc-row-actions {
+  text-align: center;
+  white-space: nowrap;
+}
+.fees-calculator .fc-row-btn {
+  background: transparent;
+  border: 1px solid #4b5563;
+  color: #d1d5db;
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin: 0 2px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.fees-calculator .fc-row-btn:hover { background: #374151; color: #f3f4f6; }
+.fees-calculator .fc-row-btn.fc-row-edit:hover {
+  background: #2f4d7a;
+  border-color: #3b82f6;
+  color: #e8eefc;
+}
+.fees-calculator .fc-row-btn.fc-row-del:hover {
+  background: #5e2f2f;
+  border-color: #7e3e3e;
+  color: #f5e8e8;
+}
+
+/* Save button while editing an existing row ("✓ Update Row") */
+.fees-calculator .fc-action-btn.fc-updating {
+  background: #2f4d7a;
+  border-color: #3b82f6;
+  color: #e8eefc;
+}
+.fees-calculator .fc-action-btn.fc-updating:hover { background: #3b5fa0; }
+
+/* The saved row currently bound to the form via "Edit" */
+.fees-calculator .fc-saved-table tr.fc-row-editing td {
+  background: #28354d;
+}
+.fees-calculator .fc-saved-table tr.fc-row-editing td:first-child {
+  box-shadow: inset 3px 0 0 #3b82f6;
+}
+
+/* ── Faction Point Calculator ─────────────────────────────────────────────── */
+.fp-calc {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 28px;
+}
+.fp-calc-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-end;
+}
+.fp-calc-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+.fp-calc-controls input,
+.fp-calc-controls select {
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  background: #111827;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 3px;
+}
+.fp-calc-controls input { width: 130px; }
+.fp-calc-card { margin-top: 14px; color: #e5e7eb; }
+.fp-calc-percape { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; }
+.fp-calc-headline { font-size: 1.1rem; margin-bottom: 10px; }
+.fp-calc-breakdown { border-collapse: collapse; }
+.fp-calc-breakdown td {
+  padding: 3px 18px 3px 0;
+  font-size: 0.9rem;
+}
+.fp-calc-breakdown td:nth-child(2) { text-align: right; }
+.fp-calc-breakdown tr.fp-calc-total td { border-top: 1px solid #374151; padding-top: 6px; }
+.fp-calc-note { margin-top: 10px; font-size: 0.78rem; color: #9ca3af; }
+
+/* My Crafting List panel's own CSS — the shell, its per-group clone tables,
+   row states and Qty/focus controls — now lives in css/craft-list.css,
+   loaded right after this file in index.html. It was split out here for the
+   project's 800-line limit; see that file's header for what moved and why. */
+
+/* Price-edit popup inputs: hide the native number spinner arrows so the field
+   shows just the value (still type=number for numeric keypad / validation). */
+.pe-price-input::-webkit-outer-spin-button,
+.pe-price-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pe-price-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Crafting Planner Materials cell: each material is a block carrying its own
+   "best path: …" line, so the two lines of one material stay together and the
+   cell needs no <br> separators. */
+.cp-mat-line { margin-bottom: 6px; }
+.cp-mat-line:last-child { margin-bottom: 0; }
+.cp-best-path {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin: 1px 0 0;
+  white-space: normal;
+}
+
+/* The .cp-paths-* classes below no longer serve the planner — its expandable
+   "best path" panel is gone. They are kept for the Consumables "alternative
+   routes" panel, which reuses all of them (js/render-consumable-alt-routes.js,
+   js/render-chain-breakdown.js): a full-width row whose own wrapper scrolls
+   rather than widening the table (the nested chain breakdown can be deep). */
+.cp-paths-toggle {
+  cursor: pointer;
+  color: #7ab8c4;
+  font-size: 0.8rem;
+  text-decoration: underline dotted;
+}
+.cp-paths-row > td {
+  background: #151b24;
+  border-top: none;
+  max-width: none;
+  white-space: normal;
+  padding: 6px 10px 10px 34px;
+}
+/* width/min-width as .row-fluid: the panel spans the row, and without this its
+   content sets the planner table's max-content width — the columns shift every
+   time a panel opens or closes. It already scrolls, so nothing is lost. */
+.cp-paths-wrap { overflow-x: auto; font-size: 0.85rem; width: 0; min-width: 100%; }
+/* One block per PANEL now (it used to be one per material, which read as N
+   competing routes instead of the row's single path). */
+.cp-paths-block { line-height: 1.5; }
+.cp-paths-root { color: #e5e7eb; font-weight: 600; }
+.cp-paths-mat { color: #e5e7eb; margin-top: 4px; }
+
+/* Top-10 boards: the expanded row carries its feeder table's own <tr>, so it is
+   as wide as that table — always wider than the board. Same inset treatment as
+   the planner panel above, and the wrapper scrolls instead of the board. */
+.jb-detail-toggle {
+  cursor: pointer;
+  color: #7ab8c4;
+  margin-right: 6px;
+  user-select: none;
+}
+.jb-detail-row > td {
+  background: #151b24;
+  border-top: none;
+  max-width: none;
+  white-space: normal;
+  padding: 6px 10px 10px 24px;
+}
+/* Same .row-fluid sizing: the feeder row inside is wider than the board by
+   design, and it must scroll here rather than widen the board's own columns. */
+.jb-detail-wrap { overflow-x: auto; font-size: 0.85rem; width: 0; min-width: 100%; }
+/* The grafted row keeps its own table so the board's tbody.rows iteration —
+   filters, sorting, the Craft List cloner — never sees the cells inside it. */
+.jb-detail-inner { width: auto; min-width: 100%; margin: 0; }
+.jb-detail-empty { color: #9ca3af; font-style: italic; }
